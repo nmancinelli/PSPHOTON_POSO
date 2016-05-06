@@ -2,6 +2,7 @@
 ! This version handles P and S of arbitrary polarization (SH and SV)
 !
 !  Written 2003-2004 by Peter Shearer (pshearer@ucsd.edu)
+!  Modified by Nick Mancinelli in 2016
 !
 !    Shearer, P.M and P.S. Earle, The global short-period wavefield
 !      modelled with a Monte Carlo seismic phonon method, Geophys.
@@ -34,7 +35,7 @@
 	  
 	  implicit none
 	
-      integer, parameter :: nlay0=655,nray0=10000
+      integer, parameter :: nlay0=653,nray0=10000
 	  
 !      parameter (nlay0=1000,nray0=15000)      !nray0 also in UPDATE_P and SCATRAYPOL
       
@@ -47,7 +48,13 @@
       integer :: iwsave(1000)
 !      real amp0(nray0,2),depsave(10000,2)
 !      integer iwsave(10000)
-      
+!
+!
+!
+      real, parameter :: x1arr=0.0, x2arr=20.0  !array limits in degrees
+      real, parameter :: t1arr=0.0, t2arr=500.0  !array limits in seconds 
+
+     
       integer, parameter :: nface0=6          !also is maximum number of scattering zones, q zones
 !      parameter (nface0=10)
 
@@ -61,7 +68,7 @@
       integer             :: iddir(nlay0,nray0,2),iflag(nlay0),iflagvol(nlay0)
       character (len=100) :: vmodel
 
-      integer, parameter  :: ntdim=3001,nxdim=360   
+      integer, parameter  :: ntdim=5001,nxdim=200
       real                :: rbin(ntdim,nxdim),dummy(10)
       real                :: rbin_p(ntdim,nxdim),rbin_sv(ntdim,nxdim),rbin_sh(ntdim,nxdim)
       real                :: rbin_z(ntdim,nxdim),rbin_rad(ntdim,nxdim)
@@ -485,7 +492,7 @@
          q(i,2)=(4./9.)*q(i,1)    !set Q for S using approx. for Poisson solid
 
 10    continue
-      print *,'***nlay0 maximum exceeded in model'
+      print *,'***nlay0 maximum exceeded in model, nlay0 = ',nlay0
       stop
 12    close (11)
       vpmin=alpha(1)
@@ -681,7 +688,7 @@
 
 110   continue    !end loop on iwave for P and S
 
-      tmax=3000.     !3000 s = 50 minutes
+      tmax=500.     !3000 s = 50 minutes
       nray=0
       nsurf=0
 !
@@ -765,7 +772,7 @@
 
 200   x=x+dx(ilay,ip,iw)*float(ixdir)       !x in km
       t=t+dt(ilay,ip,iw)                    !t in seconds
-      if (t.gt.tmax) go to 350
+      if (t.gt.tmax .or. z_s(ilay).gt.300.) go to 350
       tstar=tstar+dtstar(ilay,ip,iw)
       idir=idir*iddir(ilay,ip,iw)
 
@@ -1081,10 +1088,10 @@
 
          if (ilay.eq.1) then    !at surface, need to output t,x
          
-            isave=isave+1                  !****for dumping ray info
-            depsave(isave,1)=0.
-            depsave(isave,2)=0.
-            iwsave(isave)=iw
+            !isave=isave+1                  !****for dumping ray info
+            !depsave(isave,1)=0.
+            !depsave(isave,2)=0.
+            !iwsave(isave)=iw
 
             tmin=t/60.
             xdeg=x/kmdeg
@@ -1107,12 +1114,15 @@
             endif
                         
 !            print *,'Surface p,xdeg,tmin = ',p(ip,iw),xdeg,tmin
+!            print *,'nsurf = ', nsurf
 !            xdeg=amod(xdeg+3600.,360.)                !wraparound fix
 !            if (xdeg.gt.180.) xdeg=360.-xdeg
-            ix=nint(xdeg*2.+0.5)
+            ix=nint(xdeg*real(nxdim)/(x2arr-x1arr)+0.5)
+!            ix=nint(xdeg*2.+0.5)
             if (ix.lt.1) ix=1
             if (ix.gt.nxdim) ix=nxdim   
-            it=nint(t+0.5)
+!            it=nint(t+0.5)
+            it=nint(t*real(ntdim)/(t2arr-t1arr)+0.5)
             if (it.lt.1) it=1
             if (it.gt.ntdim) it=ntdim
 
@@ -1186,7 +1196,7 @@
 
             nsurf=nsurf+1
 
-            if (iw.eq.1) then         !upgoing P-wave at surface
+            if (iw.eq.1.and.ilay==1) then         !upgoing P-wave at surface
 
               fran=RAN1(idum)
               iface=1
@@ -1212,7 +1222,7 @@
                  svsh=0.
               end if
 
-            else                     !upgoing S-wave at surface
+            else if (ilay==1) then                   !upgoing S-wave at surface
 
               svfrac=cos(svsh)**2
               shfrac=1.-svfrac
@@ -1356,9 +1366,12 @@
       if (mod(nray,nraydump).eq.0) then
          print *,'writing rbin files...   nray,nsurf = ',nray,nsurf
 
+		 print *, x1arr,x2arr,nxdim,t1arr,t2arr,ntdim
+
+
          outfile='out.photon'
          open (12,file=outfile,form='unformatted')
-         write (12) 0.,180.,nxdim,0.,3000.,ntdim, &
+         write (12) x1arr,x2arr,nxdim,t1arr,t2arr,ntdim, &
             iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
          write (12) dummy
          write (12) ((rbin(it,ix),it=1,ntdim),ix=1,nxdim)
@@ -1366,7 +1379,7 @@
 
          outfile='out.photon_p'
          open (12,file=outfile,form='unformatted')
-         write (12) 0.,180.,nxdim,0.,3000.,ntdim, &
+         write (12) x1arr,x2arr,nxdim,t1arr,t2arr,ntdim, &
             iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
          write (12) dummy
          write (12) ((rbin_p(it,ix),it=1,ntdim),ix=1,nxdim)
@@ -1374,7 +1387,7 @@
 
          outfile='out.photon_sv'
          open (12,file=outfile,form='unformatted')
-         write (12) 0.,180.,nxdim,0.,3000.,ntdim, &
+         write (12) x1arr,x2arr,nxdim,t1arr,t2arr,ntdim, &
             iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
          write (12) dummy
          write (12) ((rbin_sv(it,ix),it=1,ntdim),ix=1,nxdim)
@@ -1382,7 +1395,7 @@
 
          outfile='out.photon_sh'
          open (12,file=outfile,form='unformatted')
-         write (12) 0.,180.,nxdim,0.,3000.,ntdim, &
+         write (12) x1arr,x2arr,nxdim,t1arr,t2arr,ntdim, &
             iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
          write (12) dummy
          write (12) ((rbin_sh(it,ix),it=1,ntdim),ix=1,nxdim)
@@ -1390,7 +1403,7 @@
 
          outfile='out.photon_z'
          open (12,file=outfile,form='unformatted')
-         write (12) 0.,180.,nxdim,0.,3000.,ntdim, &
+         write (12) x1arr,x2arr,nxdim,t1arr,t2arr,ntdim, &
             iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
          write (12) dummy
          write (12) ((rbin_z(it,ix),it=1,ntdim),ix=1,nxdim)
@@ -1398,7 +1411,7 @@
          
          outfile='out.photon_zcore'
          open (12,file=outfile,form='unformatted')
-         write (12) 0.,180.,nxdim,0.,3000.,ntdim, &
+         write (12) x1arr,x2arr,nxdim,t1arr,t2arr,ntdim, &
             iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
          write (12) dummy
          write (12) ((rbin_zcore(it,ix),it=1,ntdim),ix=1,nxdim)
@@ -1406,7 +1419,7 @@
 
          outfile='out.photon_rad'
          open (12,file=outfile,form='unformatted')
-         write (12) 0.,180.,nxdim,0.,3000.,ntdim, &
+         write (12) x1arr,x2arr,nxdim,t1arr,t2arr,ntdim, &
             iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
          write (12) dummy
          write (12) ((rbin_rad(it,ix),it=1,ntdim),ix=1,nxdim)
