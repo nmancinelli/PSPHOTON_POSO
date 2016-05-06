@@ -35,7 +35,10 @@
 	  
 	  implicit none
 	
-      integer, parameter :: nlay0=653,nray0=10000
+      integer, parameter :: nlay0=653,nray0=50000
+      real :: incoming_angle = 0.0, a_x, a_z, effective_alen, afp_effective, afp_z, afp_x
+      integer :: iani
+      real :: tmpx0,tmpz0,tmpb0,tmpx1,tmpz1,tmpb1
 	  
 !      parameter (nlay0=1000,nray0=15000)      !nray0 also in UPDATE_P and SCATRAYPOL
       
@@ -53,13 +56,15 @@
 !
       real, parameter :: x1arr=0.0, x2arr=20.0  !array limits in degrees
       real, parameter :: t1arr=0.0, t2arr=500.0  !array limits in seconds 
+      
+      real :: dxtmp,dztmp,ddtmp
 
      
       integer, parameter :: nface0=6          !also is maximum number of scattering zones, q zones
 !      parameter (nface0=10)
 
       real :: depface(nface0),vp(nface0,2),vs(nface0,2),den(nface0,2)
-      real :: scatprob(nface0,2,0:2)
+      real :: scatprob(nface0,2,0:2,2)
       real :: zminscat(nface0),zmaxscat(nface0),xmaxscat(nface0)
       real :: el(nface0),nu(nface0),gam0(nface0),eps(nface0),alen(nface0) 
       real :: zminq(nface0),zmaxq(nface0),qalpha(nface0)
@@ -138,7 +143,8 @@
             vs(iface,i)=0.
             den(iface,i)=0.
             do k=0,2
-               scatprob(iface,i,k)=0.
+               scatprob(iface,i,k,1)=0.
+               scatprob(iface,i,k,2)=0.
             enddo
          enddo
          zminscat(iface)=0.
@@ -531,14 +537,26 @@
 ! set up scattering volume flags and other stuff
 ! Note that if scattering volumes overlap, iflagvol is set to
 ! last of scattering volumes
+    do iani = 1,2
       do 30 iscat=1,nscatvol
 
 !          call GAVGSATO(el(iscat),nu(iscat),gam0(iscat),eps(iscat),
 !     &      alen(iscat), gpp0,gps0,gsp0,gss0)
 
-          call GAVGSATO2(el(iscat),nu(iscat),gam0(iscat),eps(iscat), &
-           alen(iscat), gpp0,gps0,gsp0,gss0, &
-           gppm,gpsm,gspm,gssm)
+
+		  a_z = alen(iscat)*0.1
+		  a_x = alen(iscat)
+
+		  if (iani == 1) then
+			  call GAVGSATO2(el(iscat),nu(iscat),gam0(iscat),eps(iscat), &
+			   a_x, gpp0,gps0,gsp0,gss0, &
+			   gppm,gpsm,gspm,gssm)
+		  else
+		  	   call GAVGSATO2(el(iscat),nu(iscat),gam0(iscat),eps(iscat), &
+			   a_z, gpp0,gps0,gsp0,gss0, &
+			   gppm,gpsm,gspm,gssm)
+		  
+		  end if
 
             print *,'SCATTERING STRENGTHS for LAYER: ',iscat
 
@@ -547,12 +565,12 @@
             print *,'  gppm,gpsm,gspm,gssm= ',gppm,gpsm,gspm,gssm
             print *,'  mom. afp = ', 1./(gppm+gpsm), 1./(gspm+gssm)
 
-            scatprob(iscat,1,0)=gpp0+gps0
-            scatprob(iscat,2,0)=gsp0+gss0
-            scatprob(iscat,1,1)=gpp0
-            scatprob(iscat,1,2)=gps0
-            scatprob(iscat,2,1)=gsp0
-            scatprob(iscat,2,2)=gss0
+            scatprob(iscat,1,0,iani)=gpp0+gps0
+            scatprob(iscat,2,0,iani)=gsp0+gss0
+            scatprob(iscat,1,1,iani)=gpp0
+            scatprob(iscat,1,2,iani)=gps0
+            scatprob(iscat,2,1,iani)=gsp0
+            scatprob(iscat,2,2,iani)=gss0
 
          do 25 i=2,npts
             if (z_s(i-1).ge.zminscat(iscat).and. &
@@ -560,7 +578,8 @@
                iflagvol(i)=iscat
             end if
 25       continue
-30    continue            
+30    continue 
+    end do           
 
 ! ---------------------------------- now define interface values
       i=1
@@ -798,26 +817,49 @@
                end if
             end if     !------- end klugey section
 
-            if (iscat.ne.iscatold) then     !entered new scattering volume
-               afp=1./scatprob(iscat,iw,0)
-               freepath=EXPDEV(idum)*afp
-               distsum=0.
-            end if
-            iscatold=iscat
+            !if (iscat.ne.iscatold) then     !entered new scattering volume
+               afp_x=1./scatprob(iscat,iw,0,1)
+               afp_z=1./scatprob(iscat,iw,0,2)
+               
+               
+               
+               !freepath=EXPDEV(idum)*afp
+               !distsum=0.
+            !end if
+            !iscatold=iscat
 
-            if (iw.eq.1) then
-               dist=dt(ilay,ip,iw)*alpha(ilay)
-            else
-               dist=dt(ilay,ip,iw)*beta(ilay)
-            end if
-            distsum=distsum+dist
+            !if (iw.eq.1) then
+             !  dist=dt(ilay,ip,iw)*alpha(ilay)
+            !else
+             !  dist=dt(ilay,ip,iw)*beta(ilay)
+            !end if
+            !distsum=distsum+dist
+
+			dxtmp=dx(ilay,ip,iw)  !dx in km
+			dztmp=z(ilay+1)-z(ilay)
+			ddtmp=dxtmp**2 + dztmp**2
+			ddtmp=ddtmp**0.5
+		    !print *, 'dx,dz,dt,afp = ', dx(ilay,ip,iw), z(ilay+1)-z(ilay),ddtmp, afp, RAN1(idum).lt.(ddtmp/afp)
+
+		   if (iw == 1) then
+			incoming_angle = asin(p(ip,iw)*alpha(ilay))
+		   else if (iw ==2) then
+			incoming_angle = asin(p(ip,iw)*beta(ilay))
+		   endif
+		   
+		   	afp_effective = afp_x*sin(incoming_angle)**2 + afp_z*cos(incoming_angle)**2
+
+			!print *,incoming_angle
 
 !--------------------------------------------------------------------------             
 !--------------------SCATTERING SECTION-------------------------------------
-            if (distsum.ge.freepath) then           !SCATTERED
-                                    
+            !if (distsum.ge.freepath) then           !SCATTERED
+            if (RAN1(idum).lt.(ddtmp/afp_effective)) then !SCATTERED - KLUGE TO GET ANISOTROPIC SCATTERING                       
                nscat=nscat+1
                iscatold=-99           !***need to reset this (this bug still in Sun version)
+               
+
+               
                
                if (idebug.ne.0) then
                  write (18,*) 'SC: ',nray,ip,iw,p(ip,iw),idir,ilay,iscat
@@ -829,19 +871,36 @@
                iwave1=iw
                iwoff=(iw-1)*2     !for RANDANG2 input               
 
-               fran=RAN1(idum)*scatprob(iscat,iw,0)
+				tmpx0=scatprob(iscat,iw,0,1)
+				tmpz0=scatprob(iscat,iw,0,2)
+				tmpb0=tmpx0*sin(incoming_angle)**2 + tmpz0*cos(incoming_angle)**2
+				
+				tmpx1=scatprob(iscat,iw,1,1)
+				tmpz1=scatprob(iscat,iw,1,2)
+				tmpb1=tmpx1*sin(incoming_angle)**2 + tmpz1*cos(incoming_angle)**2
+				
+
+               fran=RAN1(idum)*tmpb0
+               
+               a_x=alen(iscat)
+               a_z=alen(iscat)*0.1
+               
+               effective_alen=a_z*cos(incoming_angle)**2+a_x*sin(incoming_angle)**2
+               
+               !print *, tmpb0,tmpb1,effective_alen,incoming_angle*180.0/3.14159
                               
                if (idebug.ne.0) then
-                 write (18,*) '  ',fran,scatprob(iscat,iw,1)
+                  write (18,*) '  ',fran,tmpb0,tmpb1
+                 !write (18,*) '  ',fran,scatprob(iscat,iw,1)
                endif                               
                
-               if (fran.le.scatprob(iscat,iw,1)) then
+               if (fran.le.tmpb1) then
                   call RANDANG2(iscat,iwoff+1,el(iscat),nu(iscat), &
-                    gam0(iscat),eps(iscat),alen(iscat),psi2,zeta2,spol)
+                    gam0(iscat),eps(iscat),effective_alen,psi2,zeta2,spol)
                   iwave2=1
                else
                   call RANDANG2(iscat,iwoff+2,el(iscat),nu(iscat), &
-                   gam0(iscat),eps(iscat),alen(iscat),psi2,zeta2,spol)
+                   gam0(iscat),eps(iscat),effective_alen,psi2,zeta2,spol)
                   iwave2=2
                end if
             
@@ -1085,6 +1144,10 @@
          end if         !interface vs. nointerface
 
       else                         !---------------upgoing (idir = -1)
+      
+      if (ilay.eq.6) then
+       
+      end if
 
          if (ilay.eq.1) then    !at surface, need to output t,x
          
@@ -1092,7 +1155,7 @@
             !depsave(isave,1)=0.
             !depsave(isave,2)=0.
             !iwsave(isave)=iw
-
+            
             tmin=t/60.
             xdeg=x/kmdeg
             iwrap=mod(int(xdeg/180.),2)            
@@ -1195,6 +1258,7 @@
             end if
 
             nsurf=nsurf+1
+      
 
             if (iw.eq.1.and.ilay==1) then         !upgoing P-wave at surface
 
@@ -1478,7 +1542,7 @@
 !
       subroutine UPDATE_P(p,np,iw1,iw2,ip1,ip2)
       implicit none
-      integer, parameter :: nray0=10000
+      integer, parameter :: nray0=50000
 !      parameter (nray0=15000)
       real    :: p(nray0,2)       !ray table for both P and S
       integer :: np,iw1,iw2,ip1,ip2
@@ -1526,7 +1590,7 @@
       subroutine SCATRAYPOL(p,np,iw1,svsh,iw2,ip,psi,zeta,spol, &
                             vp0,vs0,idir,azi)
       implicit none
-      integer, parameter :: nray0=10000
+      integer, parameter :: nray0=50000
 !      parameter (nray0=15000)      
       real    :: svsh,psi,zeta,spol,vp0,vs0,azi,pi,degrad
       real    :: p(nray0,2)                   !ray table for both P and S
