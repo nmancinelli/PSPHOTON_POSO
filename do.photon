@@ -16,7 +16,7 @@ sereno_orcutt
   999999         !max scat range from source (km)
   8.08 4.47      !reference P & S velocity for layer
   0.8            !relative size of density perturbation (0.8 often assumed)
-  0.04           !rms perturbation
+  0.01           !rms perturbation
   10.0            !scale length (km)
     200            !min scat depth (km)
     600            !max scat depth (km)
@@ -42,9 +42,9 @@ sereno_orcutt
 0 99999       !min,max number of scattering events for output
 4
 4 10
-  300
+  30000
   4 220          !min,max depth of Q layer
-  2000            !Qalpha
+  20000            !Qalpha
     220 2889       !min,max depth of Q layer
     450           !Qalpha
   5153.9 9999    !min,max depth of Q layer

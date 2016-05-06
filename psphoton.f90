@@ -858,9 +858,6 @@
                nscat=nscat+1
                iscatold=-99           !***need to reset this (this bug still in Sun version)
                
-
-               
-               
                if (idebug.ne.0) then
                  write (18,*) 'SC: ',nray,ip,iw,p(ip,iw),idir,ilay,iscat
                  write (18,*) '  ',nscat,distsum,freepath,afp,x,t
@@ -996,6 +993,7 @@
                if (idir.ne.idir2) then  !switched dir, go through layer again
 ! I thought next line would fix DEBUG SCATRAYP error but it did not
                   if (idir2.eq.-1.and.iddir(ilay,ip,iw).eq.-1) idir2=1
+				  !print *, idir, idir2
                   idir=idir2
                   go to 200
                end if
@@ -1679,7 +1677,7 @@
 
       p2=slow(iw2)*sin(the/degrad)
       if (the.lt.90.) then
-         idir=2
+         idir=-1
       else
          idir=1
       end if
