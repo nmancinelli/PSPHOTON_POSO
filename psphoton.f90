@@ -544,7 +544,7 @@
 !     &      alen(iscat), gpp0,gps0,gsp0,gss0)
 
 
-		  a_z = alen(iscat)*0.1
+		  a_z = alen(iscat)*0.01
 		  a_x = alen(iscat)
 
 		  if (iani == 1) then
@@ -799,7 +799,13 @@
 !      print *,'ampstart = ',ampstart
 !      if (nray.eq.467.or.nray.eq.648) print *,'2: ',ip,iw,idir,ilay
 
-      if (idebug.eq.1) write (18,*) nray,ip,iw,idir,ilay,t,z_s(ilay)
+		   if (iw == 1) then
+			incoming_angle = asin(p(ip,iw)*alpha(ilay))
+		   else if (iw ==2) then
+			incoming_angle = asin(p(ip,iw)*beta(ilay))
+		   endif
+
+      if (idebug.eq.1) write (18,*) nray,ip,iw,idir,ilay,t,z_s(ilay),incoming_angle*180./3.14159
 
 ! first check for volume scattering
          if (iflagvol(ilay).ne.0.and.dt(ilay,ip,iw).ne.0.) then  
@@ -840,12 +846,6 @@
 			ddtmp=dxtmp**2 + dztmp**2
 			ddtmp=ddtmp**0.5
 		    !print *, 'dx,dz,dt,afp = ', dx(ilay,ip,iw), z(ilay+1)-z(ilay),ddtmp, afp, RAN1(idum).lt.(ddtmp/afp)
-
-		   if (iw == 1) then
-			incoming_angle = asin(p(ip,iw)*alpha(ilay))
-		   else if (iw ==2) then
-			incoming_angle = asin(p(ip,iw)*beta(ilay))
-		   endif
 		   
 		   	afp_effective = afp_x*sin(incoming_angle)**2 + afp_z*cos(incoming_angle)**2
 
@@ -862,6 +862,8 @@
                  write (18,*) 'SC: ',nray,ip,iw,p(ip,iw),idir,ilay,iscat
                  write (18,*) '  ',nscat,distsum,freepath,afp,x,t
                endif
+               
+               
                                              
                distsum=0.
 
@@ -880,9 +882,11 @@
                fran=RAN1(idum)*tmpb0
                
                a_x=alen(iscat)
-               a_z=alen(iscat)*0.1
+               a_z=alen(iscat)*0.01
                
                effective_alen=a_z*cos(incoming_angle)**2+a_x*sin(incoming_angle)**2
+               
+               
                
                !print *, tmpb0,tmpb1,effective_alen,incoming_angle*180.0/3.14159
                               
@@ -893,13 +897,15 @@
                
                if (fran.le.tmpb1) then
                   call RANDANG2(iscat,iwoff+1,el(iscat),nu(iscat), &
-                    gam0(iscat),eps(iscat),effective_alen,psi2,zeta2,spol)
+                    gam0(iscat),eps(iscat),a_x,a_z,psi2,zeta2,spol,incoming_angle)
                   iwave2=1
                else
                   call RANDANG2(iscat,iwoff+2,el(iscat),nu(iscat), &
-                   gam0(iscat),eps(iscat),effective_alen,psi2,zeta2,spol)
+                   gam0(iscat),eps(iscat),a_x,a_z,psi2,zeta2,spol,incoming_angle)
                   iwave2=2
                end if
+               
+               !write (188,*) incoming_angle*180.0/3.14159, afp_effective, effective_alen, psi2, zeta2, iwoff
             
                volang=psi2*degrad      !input angle for subroutines
 !               print *,'Scat: iw,iwave2,ang = ',iw,iwave2,volang
@@ -968,7 +974,7 @@
      
                if (idebug.ne.0) then               
                   write (18,*) 'SCATRAYPOL: ',np,iwave1,svsh,iwave2,ip
-                  write (18,*) psi2,zeta2,spol,vp0,vs0
+                  write (18,*) psi2,zeta2,spol,vp0,vs0,incoming_angle
                   write (18,*) idir2,azi2                                               
                   write (18,*) 'S: ',iw,ipp,ip,azi,azi2,plat,plon,idir
                   write (18,*) ' '
@@ -2483,59 +2489,73 @@
 !        calls use this array and will not be correct if 
 !        el, nu, etc., are changed
 !
-      subroutine RANDANG2(iscat,itype,el,nu,gam0,eps,a,psi,zeta,spol)
+      subroutine RANDANG2(iscat,itype,el,nu,gam0,eps,a_x,a_z,psi,zeta,spol,inc_angle)
       implicit none
       integer, parameter :: n=100,npts0=66000  !n=100 for 1.8 degree spacing
       integer, parameter :: nscat0=6
       logical :: firstcall(nscat0)
       integer :: iscat,itype,i,j,k,nk,it,k1,k2,idum
-      real :: el,nu,gam0,eps,a,sumg1,sumg2,sumg3,sumg4,area,fran,ran1
+      real :: el,nu,gam0,eps,sumg1,sumg2,sumg3,sumg4,area,fran,ran1
       real :: psi,zeta,spol,pi,psi2(npts0,nscat0),zeta2(npts0,nscat0)
-      real :: g(npts0,4,nscat0),sumg(npts0,4,nscat0),spol2(npts0,nscat0)
+      real :: g(npts0,4,nscat0),sumg(npts0,4,nscat0,91),spol2(npts0,nscat0)
       save firstcall,psi2,zeta2,sumg,nk
       data firstcall/.true.,.true.,.true.,.true.,.true.,.true./
       data pi/3.141592754/
+      integer :: iangle
+      real :: incoming_angle, a_x, a_z, inc_angle, effective_alen
       
       idum=0            
       
       if (firstcall(iscat)) then
          print *,'first call  RANDANG2: setting up iscat arrays:', iscat
          firstcall(iscat)=.false.
-         k=0
-         sumg1=0.
-         sumg2=0.
-         sumg3=0.
-         sumg4=0.     
-         do 20 i=0,n
-            do 10 j=-n,n
-               k=k+1
-               psi2(k,iscat) = float(i)*pi/float(n)
-               zeta2(k,iscat) = float(j)*pi/float(n)
+         do iangle=1,91   
+			 k=0
+			 sumg1=0.
+			 sumg2=0.
+			 sumg3=0.
+			 sumg4=0.
+			 do 20 i=0,n
+				do 10 j=-n,n
+				   k=k+1
+				   psi2(k,iscat) = float(i)*pi/float(n)
+				   zeta2(k,iscat) = float(j)*pi/float(n)
 
-               call GSATO(psi2(k,iscat),zeta2(k,iscat),el,nu,gam0,eps,a, &
-                g(k,1,iscat),g(k,2,iscat),g(k,3,iscat),g(k,4,iscat), &
-                spol2(k,iscat))
+				   incoming_angle=(float(iangle)-1)*3.14159/180.
+				   effective_alen=a_z*cos(incoming_angle)**2+a_x*sin(incoming_angle)**2
+				   
+				   !print *, incoming_angle, effective_alen
 
-               area=sin(psi2(k,iscat))*pi**2/float(n)**2
-               sumg1=sumg1+area*g(k,1,iscat)
-               sumg2=sumg2+area*g(k,2,iscat)
-               sumg3=sumg3+area*g(k,3,iscat)
-               sumg4=sumg4+area*g(k,4,iscat)
-               sumg(k,1,iscat)=sumg1
-               sumg(k,2,iscat)=sumg2
-               sumg(k,3,iscat)=sumg3
-               sumg(k,4,iscat)=sumg4
-10          continue
-20       continue
-         nk=k
-         do 40 k=1,nk
-            sumg(k,1,iscat)=sumg(k,1,iscat)/sumg1
-            sumg(k,2,iscat)=sumg(k,2,iscat)/sumg2
-            sumg(k,3,iscat)=sumg(k,3,iscat)/sumg3
-            sumg(k,4,iscat)=sumg(k,4,iscat)/sumg4
-40       continue
+				   call GSATO(psi2(k,iscat),zeta2(k,iscat),el,nu,gam0,eps,effective_alen, &
+					g(k,1,iscat),g(k,2,iscat),g(k,3,iscat),g(k,4,iscat), &
+					spol2(k,iscat))
+					
+					!print *, incoming_angle, effective_alen
+
+				   area=sin(psi2(k,iscat))*pi**2/float(n)**2
+				   sumg1=sumg1+area*g(k,1,iscat)
+				   sumg2=sumg2+area*g(k,2,iscat)
+				   sumg3=sumg3+area*g(k,3,iscat)
+				   sumg4=sumg4+area*g(k,4,iscat)
+				   sumg(k,1,iscat,iangle)=sumg1
+				   sumg(k,2,iscat,iangle)=sumg2
+				   sumg(k,3,iscat,iangle)=sumg3
+				   sumg(k,4,iscat,iangle)=sumg4
+	10          continue
+    20       continue
+			 nk=k
+			 do 40 k=1,nk
+				sumg(k,1,iscat,iangle)=sumg(k,1,iscat,iangle)/sumg1
+				sumg(k,2,iscat,iangle)=sumg(k,2,iscat,iangle)/sumg2
+				sumg(k,3,iscat,iangle)=sumg(k,3,iscat,iangle)/sumg3
+				sumg(k,4,iscat,iangle)=sumg(k,4,iscat,iangle)/sumg4
+	40       continue
+	     end do
          print *,'Finished setting up arrays'
+         
       end if
+      
+      iangle=floor(inc_angle*180.0/3.14159) + 1 !subroutine input
 
       fran=RAN1(idum)
 
@@ -2543,9 +2563,9 @@
       k2=nk
       do 50 it=1,16
          k=(k1+k2)/2
-         if (fran.lt.sumg(k,itype,iscat)) then
+         if (fran.lt.sumg(k,itype,iscat,iangle)) then
             k2=k
-         else if (fran.gt.sumg(k,itype,iscat)) then
+         else if (fran.gt.sumg(k,itype,iscat,iangle)) then
             k1=k
          else
             k2=k
@@ -2557,6 +2577,8 @@
       psi=psi2(k2,iscat)
       spol=0.
       if (itype.eq.4) spol=spol2(k2,iscat)
+      
+      !write(189,*) iangle, inc_angle,zeta,psi
 
       return
       end
@@ -2691,9 +2713,6 @@
 
       return
       end
-
-
-
 
 ! GSATO computes (4.52) from Sato and Fehler (exponential autocor)
 !   Inputs:  psi  =  spherical coor. angle (radians)
