@@ -1014,7 +1014,8 @@
 
 !--------------------------------- INTERFACE SECTION
 ! then deal with interfaces
-      if ((idir.eq.-1 .and. ilay.eq.6) .or. (idir.eq.1 .and. ilay.eq.5))  then  !at ocean bottom
+      if ((idir.eq.-1 .and. ilay.eq.6) .or. (idir.eq.1 .and. ilay.eq.4))  then  !at ocean bottom
+      		!print *, 'idir, ilay = ',idir, ilay
             tmin=t/60.
             xdeg=x/kmdeg
             iwrap=mod(int(xdeg/180.),2)            

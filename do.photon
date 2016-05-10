@@ -1,22 +1,22 @@
 ./psphoton << !
 sereno_orcutt
-10.0              !assumed freq. (Hz), affects attenuation and scattering
-15.0               !assumed source depth (km)
-1                !radiate: (1) P,  (2) SH, (3) SV, (4) SH/SV, (5) P+S, (6) custom Es/Ep, (7) custom pmax
+10.0             !assumed freq. (Hz), affects attenuation and scattering
+15.0             !assumed source depth (km)
+5                !radiate: (1) P,  (2) SH, (3) SV, (4) SH/SV, (5) P+S, (6) custom Es/Ep, (7) custom pmax
 50000            !number of ray parameters for tables (max=10000)
 0 0 0 0          !xwind1,xwind2,twind1,twind2 for ray info dump
 0                !0=normal, 1=force equal refl/trans
-3              !number of interface depths (to follow) (max=6)
+3                !number of interface depths (to follow) (max=6)
   0              !interface 1
    4.0
-   10.0           !interface 3 (iasp91 CMB)
-4              !number of scattering volumes (to follow) (max=6)
-  10              !min scat depth (km)
-  200            !max scat depth (km)
+   10.0          !interface 3 (iasp91 CMB)
+4                !number of scattering volumes (to follow) (max=6)
+  10             !min scat depth (km)
+  300            !max scat depth (km)
   999999         !max scat range from source (km)
   8.08 4.47      !reference P & S velocity for layer
   0.8            !relative size of density perturbation (0.8 often assumed)
-  0.00           !rms perturbation
+  $1             !rms perturbation
   10.0            !scale length (km)
     200            !min scat depth (km)
     600            !max scat depth (km)
