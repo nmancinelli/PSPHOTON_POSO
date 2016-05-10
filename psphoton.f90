@@ -502,7 +502,7 @@
       stop
 12    close (11)
       vpmin=alpha(1)
-      vsmin=beta(1)
+      vsmin=beta(6)
       vpsource=alpha(izsource)
       vssource=beta(izsource)
       print *,'finished reading model'
@@ -741,6 +741,7 @@
                if (iwstart.eq.7.and.p(ip,iw).gt.pmax_takeoff) go to 760     !*****
                idir=idir_init
 
+	  !print *, 'ip,iw,amp0(ip,iw), p(ip,iw) = ', ip,iw,amp0(ip,iw),p(ip,iw)
       ampstart=amp0(ip,iw)
       if (ampstart.eq.0.) go to 760   !ray parameters not radiated by source
       svsh=0.                        !pure SV polarization
@@ -795,7 +796,7 @@
       tstar=tstar+dtstar(ilay,ip,iw)
       idir=idir*iddir(ilay,ip,iw)
 
-!      print *,'200 = ',iw,ip,ilay,x,t,idir
+ !     print *,'200 = ',iw,ip,ilay,x,t,idir
 !      print *,'ampstart = ',ampstart
 !      if (nray.eq.467.or.nray.eq.648) print *,'2: ',ip,iw,idir,ilay
 
@@ -1013,6 +1014,111 @@
 
 !--------------------------------- INTERFACE SECTION
 ! then deal with interfaces
+      if ((idir.eq.-1 .and. ilay.eq.6) .or. (idir.eq.1 .and. ilay.eq.5))  then  !at ocean bottom
+            tmin=t/60.
+            xdeg=x/kmdeg
+            iwrap=mod(int(xdeg/180.),2)            
+            call SPH_LOC(plat,plon,xdeg,azi,plat2,plon2)
+            call SPH_AZI(0.,0.,plat2,plon2,xdeg,azidum)
+            
+            psecdeg=p(ip,iw)*111.19
+            call SPH_AZI(plat2,plon2,0.,0.,xdum,azidum1)      !to source
+            call SPH_AZI(plat2,plon2,plat,plon,xdum,azidum2)  !to last scatterer (or origin if none)
+
+            if (iwrap.eq.1) azidum2=azidum2+180.         !wrap-around correction
+            slowang=azidum2-azidum1
+            psecdegtran=sin(slowang/degrad)*psecdeg
+            psecdegrad=cos(slowang/degrad)*psecdeg
+            
+            if (idebug.eq.1) then
+               write (18,*) 'at layer 6: ',ip,iw,xdeg,tmin
+               write (19,*) nray,ip,iw,xdeg,tmin
+            endif
+                        
+!            print *,'Surface p,xdeg,tmin = ',p(ip,iw),xdeg,tmin
+!            print *,'nsurf = ', nsurf
+!            xdeg=amod(xdeg+3600.,360.)                !wraparound fix
+!            if (xdeg.gt.180.) xdeg=360.-xdeg
+            ix=nint(xdeg*real(nxdim)/(x2arr-x1arr)+0.5)
+!            ix=nint(xdeg*2.+0.5)
+            if (ix.lt.1) ix=1
+            if (ix.gt.nxdim) ix=nxdim   
+!            it=nint(t+0.5)
+            it=nint(t*real(ntdim)/(t2arr-t1arr)+0.5)
+            if (it.lt.1) it=1
+            if (it.gt.ntdim) it=ntdim
+
+            amp=25.*ampstart*exp(-freq*pi*tstar)          !attenuation
+            if (amp.lt.1.e-12) amp=0.        !avoid underflow errors
+            amp2=amp**2
+!            if (xdeg.gt.20..and.amp2.gt.10.) then
+!               print *,' '
+!               print *,'Big amplitude: ',xdeg,amp2
+!               print *,'tmin = ',tmin
+!               print *,'ampstart, iw0, iw = ',ampstart,iwstart,iw
+!               print *,'ipp,nscat = ',ipp,nscat
+!               print *,'starting p = ',p(ipp,iwstart)
+!            end if
+
+            if (nscat.ge.nscatmin.and.nscat.le.nscatmax) then
+               rbin(it,ix)=rbin(it,ix)+amp2
+               if (iw.eq.1) then
+                  rbin_p(it,ix)=rbin_p(it,ix)+amp2
+                  sinthe=p(ip,iw)*alpha(6)
+                  amp_rad=sinthe*sqrt(amp2)
+                  energy_rad=amp_rad**2
+                  energy_vert=amp2-energy_rad
+                  rbin_z(it,ix)=rbin_z(it,ix)+energy_vert
+                  if (psecdeg.le.5.) then
+                     rbin_zcore(it,ix)=rbin_zcore(it,ix)+energy_vert
+                  endif
+                  rbin_rad(it,ix)=rbin_rad(it,ix)+energy_rad
+
+                  if (iforcerefl.eq.-1) then                  
+                   do k=1,nslowout
+                     if (xdeg.ge.xslow1(k).and.xdeg.le.xslow2(k).and. &
+                         t.ge.tslow1(k).and.t.le.tslow2(k)) then
+                        i=(nslowdim+1)/2+nint(psecdegrad*2.)
+                        j=(nslowdim+1)/2+nint(psecdegtran*2.)
+                        if (i.ge.1.and.i.le.nslowdim.and. &
+                            j.ge.1.and.j.le.nslowdim) then
+                           slowstack(i,j,k)=slowstack(i,j,k)+energy_vert
+                        endif
+                     endif
+                   enddo
+                  endif
+                  
+               else
+                  svfrac=cos(svsh)**2
+                  shfrac=1.-svfrac
+                  rbin_sv(it,ix)=rbin_sv(it,ix)+amp2*svfrac
+                  rbin_sh(it,ix)=rbin_sh(it,ix)+amp2*shfrac
+                  sinthe=p(ip,iw)*beta(6) !crust level
+                  amp_vert=sinthe*sqrt(amp2)
+                  energy_vert=amp_vert**2
+                  energy_rad=amp2-energy_vert
+                  rbin_z(it,ix)=rbin_z(it,ix)+energy_vert
+                  if (psecdeg.le.5.) then
+                     rbin_zcore(it,ix)=rbin_zcore(it,ix)+energy_vert
+                  endif
+                  rbin_rad(it,ix)=rbin_rad(it,ix)+energy_rad
+               end if
+            end if
+
+            if (xdeg.ge.xwind1.and.xdeg.le.xwind2.and. &
+                tmin.ge.twind1.and.tmin.le.twind2) then
+               print *,'Match to window, xdeg,tmin,p:'
+               print *,xdeg,tmin,p(ip,iw),tstar,amp,nscat
+               nsave=isave
+               do 8888 isave=1,nsave
+                  print *,depsave(isave,1),depsave(isave,2), &
+                          iwsave(isave)
+8888           continue
+            end if
+
+       
+      end if
+
       if (idir.eq.1) then              !downgoing
 
          if (iflag(ilay+1).eq.0) then       !no interface to worry about
@@ -1148,119 +1254,15 @@
          end if         !interface vs. nointerface
 
       else                         !---------------upgoing (idir = -1)
-      
-      if (ilay.eq.6) then
-       
-      end if
 
-         if (ilay.eq.1) then    !at surface, need to output t,x
+         if (ilay.eq.1) then    !at surface
          
             !isave=isave+1                  !****for dumping ray info
             !depsave(isave,1)=0.
             !depsave(isave,2)=0.
             !iwsave(isave)=iw
             
-            tmin=t/60.
-            xdeg=x/kmdeg
-            iwrap=mod(int(xdeg/180.),2)            
-            call SPH_LOC(plat,plon,xdeg,azi,plat2,plon2)
-            call SPH_AZI(0.,0.,plat2,plon2,xdeg,azidum)
-            
-            psecdeg=p(ip,iw)*111.19
-            call SPH_AZI(plat2,plon2,0.,0.,xdum,azidum1)      !to source
-            call SPH_AZI(plat2,plon2,plat,plon,xdum,azidum2)  !to last scatterer (or origin if none)
-
-            if (iwrap.eq.1) azidum2=azidum2+180.         !wrap-around correction
-            slowang=azidum2-azidum1
-            psecdegtran=sin(slowang/degrad)*psecdeg
-            psecdegrad=cos(slowang/degrad)*psecdeg
-            
-            if (idebug.eq.1) then
-               write (18,*) 'at surface: ',ip,iw,xdeg,tmin
-               write (19,*) nray,ip,iw,xdeg,tmin
-            endif
-                        
-!            print *,'Surface p,xdeg,tmin = ',p(ip,iw),xdeg,tmin
-!            print *,'nsurf = ', nsurf
-!            xdeg=amod(xdeg+3600.,360.)                !wraparound fix
-!            if (xdeg.gt.180.) xdeg=360.-xdeg
-            ix=nint(xdeg*real(nxdim)/(x2arr-x1arr)+0.5)
-!            ix=nint(xdeg*2.+0.5)
-            if (ix.lt.1) ix=1
-            if (ix.gt.nxdim) ix=nxdim   
-!            it=nint(t+0.5)
-            it=nint(t*real(ntdim)/(t2arr-t1arr)+0.5)
-            if (it.lt.1) it=1
-            if (it.gt.ntdim) it=ntdim
-
-            amp=25.*ampstart*exp(-freq*pi*tstar)          !attenuation
-            if (amp.lt.1.e-12) amp=0.        !avoid underflow errors
-            amp2=amp**2
-!            if (xdeg.gt.20..and.amp2.gt.10.) then
-!               print *,' '
-!               print *,'Big amplitude: ',xdeg,amp2
-!               print *,'tmin = ',tmin
-!               print *,'ampstart, iw0, iw = ',ampstart,iwstart,iw
-!               print *,'ipp,nscat = ',ipp,nscat
-!               print *,'starting p = ',p(ipp,iwstart)
-!            end if
-
-            if (nscat.ge.nscatmin.and.nscat.le.nscatmax) then
-               rbin(it,ix)=rbin(it,ix)+amp2
-               if (iw.eq.1) then
-                  rbin_p(it,ix)=rbin_p(it,ix)+amp2
-                  sinthe=p(ip,iw)*vpmin
-                  amp_rad=sinthe*sqrt(amp2)
-                  energy_rad=amp_rad**2
-                  energy_vert=amp2-energy_rad
-                  rbin_z(it,ix)=rbin_z(it,ix)+energy_vert
-                  if (psecdeg.le.5.) then
-                     rbin_zcore(it,ix)=rbin_zcore(it,ix)+energy_vert
-                  endif
-                  rbin_rad(it,ix)=rbin_rad(it,ix)+energy_rad
-
-                  if (iforcerefl.eq.-1) then                  
-                   do k=1,nslowout
-                     if (xdeg.ge.xslow1(k).and.xdeg.le.xslow2(k).and. &
-                         t.ge.tslow1(k).and.t.le.tslow2(k)) then
-                        i=(nslowdim+1)/2+nint(psecdegrad*2.)
-                        j=(nslowdim+1)/2+nint(psecdegtran*2.)
-                        if (i.ge.1.and.i.le.nslowdim.and. &
-                            j.ge.1.and.j.le.nslowdim) then
-                           slowstack(i,j,k)=slowstack(i,j,k)+energy_vert
-                        endif
-                     endif
-                   enddo
-                  endif
-                  
-               else
-                  svfrac=cos(svsh)**2
-                  shfrac=1.-svfrac
-                  rbin_sv(it,ix)=rbin_sv(it,ix)+amp2*svfrac
-                  rbin_sh(it,ix)=rbin_sh(it,ix)+amp2*shfrac
-                  sinthe=p(ip,iw)*vsmin
-                  amp_vert=sinthe*sqrt(amp2)
-                  energy_vert=amp_vert**2
-                  energy_rad=amp2-energy_vert
-                  rbin_z(it,ix)=rbin_z(it,ix)+energy_vert
-                  if (psecdeg.le.5.) then
-                     rbin_zcore(it,ix)=rbin_zcore(it,ix)+energy_vert
-                  endif
-                  rbin_rad(it,ix)=rbin_rad(it,ix)+energy_rad
-               end if
-            end if
-
-            if (xdeg.ge.xwind1.and.xdeg.le.xwind2.and. &
-                tmin.ge.twind1.and.tmin.le.twind2) then
-               print *,'Match to window, xdeg,tmin,p:'
-               print *,xdeg,tmin,p(ip,iw),tstar,amp,nscat
-               nsave=isave
-               do 8888 isave=1,nsave
-                  print *,depsave(isave,1),depsave(isave,2), &
-                          iwsave(isave)
-8888           continue
-            end if
-
+           
             nsurf=nsurf+1
       
 
