@@ -66,7 +66,7 @@
       real :: depface(nface0),vp(nface0,2),vs(nface0,2),den(nface0,2)
       real :: scatprob(nface0,2,0:2,2)
       real :: zminscat(nface0),zmaxscat(nface0),xmaxscat(nface0)
-      real :: el(nface0),nu(nface0),gam0(nface0),eps(nface0),alen(nface0) 
+      real :: el(nface0),nu(nface0),gam0(nface0),eps(nface0),alen(nface0),aspect_z_over_x(nface0) 
       real :: zminq(nface0),zmaxq(nface0),qalpha(nface0)
       real :: rt(2,2,3,3,nface0,nray0,2)
       
@@ -441,8 +441,8 @@
          gam0(i)=sqrt(3.)
          print *,'Enter rms perturbation (e.g., 0.01 for 1%)'
          read *,eps(i)
-         print *,'Enter scale length (km)'
-         read *,alen(i)
+         print *,'Enter scale length (km) and aspect ratio (az/ax)'
+         read *,alen(i), aspect_z_over_x(i)
       enddo
 
       print *,'Enter min,max number of scattering events for output'
@@ -544,7 +544,7 @@
 !     &      alen(iscat), gpp0,gps0,gsp0,gss0)
 
 
-		  a_z = alen(iscat)*0.01
+		  a_z = alen(iscat)*aspect_z_over_x(iscat)
 		  a_x = alen(iscat)
 
 		  if (iani == 1) then
@@ -883,7 +883,7 @@
                fran=RAN1(idum)*tmpb0
                
                a_x=alen(iscat)
-               a_z=alen(iscat)*0.01
+               a_z=alen(iscat)*aspect_z_over_x(iscat)
                
                effective_alen=a_z*cos(incoming_angle)**2+a_x*sin(incoming_angle)**2
                
