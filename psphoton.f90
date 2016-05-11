@@ -39,6 +39,9 @@
       real :: incoming_angle = 0.0, a_x, a_z, effective_alen, afp_effective, afp_z, afp_x
       integer :: iani
       real :: tmpx0,tmpz0,tmpb0,tmpx1,tmpz1,tmpb1
+      real :: amp_tran_tmp, amp_rad_tmp
+      
+      real :: energy_tran, amp_tran
 	  
 !      parameter (nlay0=1000,nray0=15000)      !nray0 also in UPDATE_P and SCATRAYPOL
       
@@ -76,7 +79,7 @@
       integer, parameter  :: ntdim=5001,nxdim=200
       real                :: rbin(ntdim,nxdim),dummy(10)
       real                :: rbin_p(ntdim,nxdim),rbin_sv(ntdim,nxdim),rbin_sh(ntdim,nxdim)
-      real                :: rbin_z(ntdim,nxdim),rbin_rad(ntdim,nxdim)
+      real                :: rbin_z(ntdim,nxdim),rbin_rad(ntdim,nxdim), rbin_tran(ntdim,nxdim)=0.0
       real                :: rbin_zcore(ntdim,nxdim)
       character (len=100) :: outfile,debugfile
 !
@@ -1023,8 +1026,8 @@
             call SPH_AZI(0.,0.,plat2,plon2,xdeg,azidum)
             
             psecdeg=p(ip,iw)*111.19
-            call SPH_AZI(plat2,plon2,0.,0.,xdum,azidum1)      !to source
-            call SPH_AZI(plat2,plon2,plat,plon,xdum,azidum2)  !to last scatterer (or origin if none)
+            call SPH_AZIDP(plat2,plon2,0.,0.,xdum,azidum1)      !to source
+            call SPH_AZIDP(plat2,plon2,plat,plon,xdum,azidum2)  !to last scatterer (or origin if none)
 
             if (iwrap.eq.1) azidum2=azidum2+180.         !wrap-around correction
             slowang=azidum2-azidum1
@@ -1065,15 +1068,42 @@
                rbin(it,ix)=rbin(it,ix)+amp2
                if (iw.eq.1) then
                   rbin_p(it,ix)=rbin_p(it,ix)+amp2
-                  sinthe=p(ip,iw)*alpha(6)
+                  sinthe=p(ip,iw)*alpha(ilay)
                   amp_rad=sinthe*sqrt(amp2)
                   energy_rad=amp_rad**2
                   energy_vert=amp2-energy_rad
+                  !radial and transverse comp
+                  amp_tran=amp_rad*sin(slowang/degrad)
+                  energy_tran=amp_tran**2
+                  energy_rad=energy_rad-energy_tran
                   rbin_z(it,ix)=rbin_z(it,ix)+energy_vert
                   if (psecdeg.le.5.) then
                      rbin_zcore(it,ix)=rbin_zcore(it,ix)+energy_vert
                   endif
                   rbin_rad(it,ix)=rbin_rad(it,ix)+energy_rad
+                  rbin_tran(it,ix)=rbin_tran(it,ix)+energy_tran
+
+
+	         if (energy_vert<0.0 .or. energy_rad<0.0 .or. energy_tran<0.0) then
+	         	print *, '***ERROR E1: energy is negative'
+				print *, energy_vert, energy_rad, energy_tran,ilay
+				print *, amp_rad, sinthe, amp2, slowang, degrad
+				print *, slowang, azidum1, azidum2
+				print *, plat2,plon2,plat,plon,xdum,azidum2
+				print *, svsh,slowang
+	         	stop
+	         end if
+	         
+	         	if (isnan(energy_vert) .or. isnan(energy_rad) .or. isnan(energy_tran)) then
+					print *, '***ERROR E1_NaN: energy is NaN'
+					print *, energy_vert, energy_rad, energy_tran,ilay
+					print *, amp_rad, sinthe, amp2, slowang, degrad
+					print *, slowang, azidum1, azidum2
+					print *, plat2,plon2,plat,plon,xdum,azidum2
+					print *, svsh,slowang
+					stop
+				 end if 
+	         	
 
                   if (iforcerefl.eq.-1) then                  
                    do k=1,nslowout
@@ -1095,16 +1125,67 @@
                   rbin_sv(it,ix)=rbin_sv(it,ix)+amp2*svfrac
                   rbin_sh(it,ix)=rbin_sh(it,ix)+amp2*shfrac
                   sinthe=p(ip,iw)*beta(6) !crust level
-                  amp_vert=sinthe*sqrt(amp2)
+                  !amp_vert=sinthe*sqrt(amp2)
+                  amp_vert=sinthe*sqrt(amp2) * cos(svsh)
+                  amp_tran=sin(svsh)*sqrt(amp2)
                   energy_vert=amp_vert**2
-                  energy_rad=amp2-energy_vert
+                  energy_tran=amp_tran**2 
+                  energy_rad=amp2-energy_vert-energy_tran
+                  
+				if (energy_vert<0.0 .or. energy_rad<0.0 .or. energy_tran<0.0) then
+					print *, '***ERROR E2_SUB: energy is negative'
+					print *, energy_vert, energy_rad, energy_tran,ilay
+					print *, amp_vert, amp_tran, amp2
+					print *, svsh,slowang
+					print *,
+					energy_rad=0.
+				 end if 
+                  
+                  !
+                  !rotate: transverse, radial should be relative to great circle path
+                  !
+                  amp_tran_tmp=energy_tran**0.5
+                  amp_rad_tmp =energy_rad**0.5
+                  
+                  amp_tran=amp_tran_tmp*cos(slowang/degrad)+amp_rad_tmp*sin(slowang/degrad)
+                  amp_rad=amp_tran_tmp*sin(slowang/degrad)+amp_rad_tmp*cos(slowang/degrad)
+                  
+                  energy_tran=amp_tran**2.0
+                  energy_rad=amp_rad**2.0
+                  
                   rbin_z(it,ix)=rbin_z(it,ix)+energy_vert
                   if (psecdeg.le.5.) then
                      rbin_zcore(it,ix)=rbin_zcore(it,ix)+energy_vert
                   endif
                   rbin_rad(it,ix)=rbin_rad(it,ix)+energy_rad
+                  rbin_tran(it,ix)=rbin_tran(it,ix)+energy_tran
+                  
+				if (energy_vert<0.0 .or. energy_rad<0.0 .or. energy_tran<0.0) then
+					print *, '***ERROR E2: energy is negative'
+					print *, energy_vert, energy_rad, energy_tran,ilay
+					print *, amp_rad, sinthe, amp2, slowang, degrad
+					print *, slowang, azidum1, azidum2
+					print *, plat2,plon2,plat,plon,xdum,azidum2
+					print *, svsh,slowang
+					stop
+				 end if
+				
+				if (isnan(energy_vert) .or. isnan(energy_rad) .or. isnan(energy_tran)) then
+					print *, '***ERROR E2_NaN: energy is NaN'
+					print *, energy_vert, energy_rad, energy_tran,ilay
+					print *, amp_rad, sinthe, amp2, slowang, degrad
+					print *, slowang, azidum1, azidum2
+					print *, plat2,plon2,plat,plon,xdum,azidum2
+					print *, svsh,slowang
+					print *, amp_rad_tmp, amp_tran_tmp
+					stop
+				 end if 
+				 
+                  
                end if
             end if
+            
+            
 
             if (xdeg.ge.xwind1.and.xdeg.le.xwind2.and. &
                 tmin.ge.twind1.and.tmin.le.twind2) then
@@ -1494,6 +1575,14 @@
             iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
          write (12) dummy
          write (12) ((rbin_rad(it,ix),it=1,ntdim),ix=1,nxdim)
+         close (12)
+         
+         outfile='out.photon_tran'
+         open (12,file=outfile,form='unformatted')
+         write (12) x1arr,x2arr,nxdim,t1arr,t2arr,ntdim, &
+            iwstart,stnmin,stnmax,zsource,zsource,nray,nsurf
+         write (12) dummy
+         write (12) ((rbin_tran(it,ix),it=1,ntdim),ix=1,nxdim)
          close (12)
          
          if (iforcerefl.eq.-1) then        !output slowness stacks
@@ -2380,6 +2469,49 @@
       return
       end
 
+! SPH_AZIDP computes distance and azimuth between two points on sphere
+!          (double precision version with real*4 i/o)
+!
+! Inputs:  flat1  =  latitude of first point (degrees) 
+!          flon2  =  longitude of first point (degrees)
+!          flat2  =  latitude of second point (degrees)
+!          flon2  =  longitude of second point (degrees)
+! Returns: del    =  angular separation between points (degrees)
+!          azi    =  azimuth at 1st point to 2nd point, from N (deg.)
+!
+! Note:  This routine is inaccurate for del less than about 0.01 degrees.
+!
+      subroutine SPH_AZIDP(flat1,flon1,flat2,flon2,del,azi)
+      implicit double precision (a-h,o-z)
+      real*4 flat1,flon1,flat2,flon2,del,azi
+      if ((flat1.eq.flat2.and.flon1.eq.flon2).or. &
+         (flat1.eq.90..and.flat2.eq.90.).or. &
+         (flat1.eq.-90..and.flat2.eq.-90.))  then
+         del=0.
+         azi=0.
+         return
+      end if
+      pi=3.14159265358979267
+      raddeg=pi/dble(180.)
+      theta1=(dble(90.)-dble(flat1))*raddeg
+      theta2=(dble(90.)-dble(flat2))*raddeg
+      phi1=dble(flon1)*raddeg
+      phi2=dble(flon2)*raddeg
+      stheta1=dsin(theta1)
+      stheta2=dsin(theta2)
+      ctheta1=dcos(theta1)
+      ctheta2=dcos(theta2)
+      cang=stheta1*stheta2*cos(phi2-phi1)+ctheta1*ctheta2
+      ang=dacos(cang)
+      del=real(ang/raddeg)
+      sang=dsqrt(1.d0-cang*cang)
+      caz=(ctheta2-ctheta1*cang)/(sang*stheta1)
+      saz=-stheta2*dsin(phi1-phi2)/sang
+      az=datan2(saz,caz)
+      azi=real(az/raddeg)
+      if (azi.lt.0.) azi=azi+360.
+      return
+      end
 
 ! SPH_AZI computes distance and azimuth between two points on sphere
 !
