@@ -1,6 +1,6 @@
 subroutine read_phonon_array(arrayfile,rbin,x1,x2,nxdim,t1,t2,ntdim)
 	implicit none   
-	real, dimension(3000,3000)   :: rbin
+	real, dimension(10000,10000)   :: rbin
 	real, dimension(10)          :: dummy
 	character (len=200)          :: arrayfile
 	integer                      :: it,ix
