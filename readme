@@ -1,0 +1,22 @@
+This version of the phonon code was modified from the original sent by Peter Shearer in 2012.
+Modifications include:
+	A focus on regional phases Po and So
+	An oceanic lithosphere background model from sereno and orcutt
+	The Monte Carlo method models anisotropic heterogeneity by using Born Scattering coefficients
+		that vary based on ray angle.
+		A_eff=Az*cos**2(theta)+Ax*sin**2(theta)
+		Az: vertical correlation length
+		Ax: horizontal correlation length
+		theta: ray angle from vertical, arcsin(p*v)
+	The scattering probability along each ray segment is computed by: sqrt(dx**2 + dy**2) ./afp.
+		This approach is valid provided that dx,dy are much smaller than afp (tested)
+	The scattering pattern for each scattering event is computed using the A_eff corrleation length from above.
+	The scattering patterns are precomputed for each all possible ray angles between 0 and 90 degrees,
+		with 1 degree spacing.
+	The code now writes out true radial and transverse arrays.  The prior version only wrote all phonon energy
+		in the horizontal plane as out.photon_rad.
+	The receivers are placed on the ocean floor.  Downgoing phonons are counted in layer 4 (i.e. above
+		the seabed interface), and upgoing phonons are counted in layer 6 (i.e. below the seabed interface).
+
+To do:
+	Allow for topography on the seabed (or any interface).
