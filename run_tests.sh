@@ -20,21 +20,21 @@ $1              !assumed freq. (Hz), affects attenuation and scattering
   999999          !max scat range from source (km)
   5.80 3.36       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  0.0             !rms perturbation
+  0.02             !rms perturbation
   0.25 20.0        !scale length (km), aspect ratio (az/ax)
     10              !min scat depth (km)
     100             !max scat depth (km)
     999999          !max scat range from source (km)
     8.08 4.47       !reference P & S velocity for layer
     0.8             !relative size of density perturbation (0.8 often assumed)
-    2.0              !rms perturbation
+    0.02              !rms perturbation
     10.0 0.05        !scale length (km), aspect ratio (az/ax)
   100             !min scat depth (km)
   300             !max scat depth (km)
   999999          !max scat range from source (km)
   8.08 4.47       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  2.0              !rms perturbation
+  0.02              !rms perturbation
   5.0 0.2        !scale length (km), aspect ratio (az/ax)
 	300              !min scat depth (km)
 	9999             !max scat depth (km)
