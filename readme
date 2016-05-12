@@ -17,6 +17,8 @@ Modifications include:
 		in the horizontal plane as out.photon_rad.
 	The receivers are placed on the ocean floor.  Downgoing phonons are counted in layer 4 (i.e. above
 		the seabed interface), and upgoing phonons are counted in layer 6 (i.e. below the seabed interface).
+	Intrinsic Q comes from a model by Booth, Forsyth, and ??? (2014).
+		Q may have to be increased later due to scattering attenuation from the source.
 
 To do:
 	Allow for topography on the seabed (or any interface).
