@@ -19,6 +19,8 @@ Modifications include:
 		the seabed interface), and upgoing phonons are counted in layer 6 (i.e. below the seabed interface).
 	Intrinsic Q comes from a model by Booth, Forsyth, and ??? (2014).
 		Q may have to be increased later due to scattering attenuation from the source.
+	Initial heterogeneity model comes from Kennett and Furumura (2013a).
+
 
 To do:
 	Allow for topography on the seabed (or any interface).
