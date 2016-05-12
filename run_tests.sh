@@ -20,7 +20,7 @@ $1              !assumed freq. (Hz), affects attenuation and scattering
   999999          !max scat range from source (km)
   5.80 3.36       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  0.02             !rms perturbation
+  0.00             !rms perturbation
   0.25 20.0        !scale length (km), aspect ratio (az/ax)
     10              !min scat depth (km)
     100             !max scat depth (km)
@@ -34,27 +34,27 @@ $1              !assumed freq. (Hz), affects attenuation and scattering
   999999          !max scat range from source (km)
   8.08 4.47       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  0.02              !rms perturbation
-  5.0 0.2        !scale length (km), aspect ratio (az/ax)
+  0.08            !rms perturbation
+  5.0 1.0         !scale length (km), aspect ratio (az/ax)
 	300              !min scat depth (km)
 	9999             !max scat depth (km)
-	999999          !max scat range from source (km)
-	8.08 4.47       !reference P & S velocity for layer
-	0.8             !relative size of density perturbation (0.8 often assumed)
-	0.0              !rms perturbation
-	10.0 0.1        !scale length (km), aspect ratio (az/ax)
+	999999           !max scat range from source (km)
+	8.08 4.47        !reference P & S velocity for layer
+	0.8              !relative size of density perturbation (0.8 often assumed)
+	0.00              !rms perturbation
+	10.0 0.1         !scale length (km), aspect ratio (az/ax)
 0 99999          !min,max number of scattering events for output
 5                !number of intrinsic Q layers (to follow) (max=6)
   4 10            !min,max depth of Q layer
   300             !Qalpha
     10 100        !min,max depth of Q layer
-    1000          !Qalpha
+    999999          !Qalpha
   100 250         !min,max depth of Q layer
-  144             !Qalpha
+  999999             !Qalpha
     250 410       !min,max depth of Q layer
-    358           !Qalpha
+    999999           !Qalpha
   410 9999        !min,max depth of Q layer
-  6250            !Qalpha
+  999999            !Qalpha
 200000           !write output at multiples of this number of rays
 0                !out.debug: 0=none, 1=full, 2=scat
 EOF
