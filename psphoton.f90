@@ -1164,10 +1164,10 @@
                   energy_tran=amp_tran**2 
                   energy_rad=amp2-energy_vert-energy_tran
                   
-                  if (energy_tran/energy_vert.gt.10**7) then  !fixes subtraction problem
+                  if (abs(energy_tran/energy_vert).gt.10**5) then  !fixes subtraction problem
                     energy_vert=0.0
                   end if
-                  if (energy_tran/energy_rad.gt.10**7) then  !fixes subtraction problem
+                  if (abs(energy_tran/energy_rad).gt.10**5) then  !fixes subtraction problem
                     energy_rad=0.0
                   end if
                   
@@ -1178,6 +1178,7 @@
 					print *, svsh,slowang
 					print *,
 					energy_rad=0.
+					stop
 				 end if 
                   
                   !
