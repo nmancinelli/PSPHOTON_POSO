@@ -41,6 +41,8 @@
       real :: tmpx0,tmpz0,tmpb0,tmpx1,tmpz1,tmpb1
       real :: amp_tran_tmp, amp_rad_tmp
       
+      integer :: nscat_along_ray_segment, iscat_along_ray_segment
+      
       real :: energy_tran, amp_tran
 	  
 !      parameter (nlay0=1000,nray0=15000)      !nray0 also in UPDATE_P and SCATRAYPOL
@@ -852,13 +854,32 @@
 		    !print *, 'dx,dz,dt,afp = ', dx(ilay,ip,iw), z(ilay+1)-z(ilay),ddtmp, afp, RAN1(idum).lt.(ddtmp/afp)
 		   
 		   	afp_effective = afp_x*sin(incoming_angle)**2 + afp_z*cos(incoming_angle)**2
+		   	
+		   	!if (iscat==2) print *, afp_x, afp_z, afp_effective, incoming_angle
 
 			!print *,incoming_angle
+			
+
 
 !--------------------------------------------------------------------------             
 !--------------------SCATTERING SECTION-------------------------------------
             !if (distsum.ge.freepath) then           !SCATTERED
-            if (RAN1(idum).lt.(ddtmp/afp_effective)) then !SCATTERED - KLUGE TO GET ANISOTROPIC SCATTERING                       
+            if (RAN1(idum).lt.(ddtmp/afp_effective)) then !SCATTERED - KLUGE TO GET ANISOTROPIC SCATTERING
+            	! check if multiple scattering in ray
+            			
+				if (ddtmp.gt.afp_effective) then
+			        nscat_along_ray_segment=nint(ddtmp/afp_effective)
+				else
+				    nscat_along_ray_segment=1
+				end if
+			
+			   !print *, 'nscat_along_ray_segment, ddtmp, afp_effective = ', nscat_along_ray_segment, ddtmp, afp_effective, &
+			    !    incoming_angle*180./3.14159
+			
+			   !iscat_along_ray_segment=1 !init
+			   !while (iscat_along_ray_segment.le.nscat_along_ray_segment) do
+			   do 777 iscat_along_ray_segment=1,nscat_along_ray_segment
+				                
                nscat=nscat+1
                iscatold=-99           !***need to reset this (this bug still in Sun version)
                
@@ -866,8 +887,6 @@
                  write (18,*) 'SC: ',nray,ip,iw,p(ip,iw),idir,ilay,iscat
                  write (18,*) '  ',nscat,distsum,freepath,afp,x,t
                endif
-               
-               
                                              
                distsum=0.
 
@@ -882,7 +901,6 @@
 				tmpz1=scatprob(iscat,iw,1,2)
 				tmpb1=tmpx1*sin(incoming_angle)**2 + tmpz1*cos(incoming_angle)**2
 				
-
                fran=RAN1(idum)*tmpb0
                
                a_x=alen(iscat)
@@ -939,17 +957,17 @@
                   write (18,*) '   ',plat2,plon2,azi2
                endif                                            
 
-! azimuth calculation has problems near N and S pole
-! the following check should exit to next ray if NaN problem occurs
-	!print *,'azi2 = ',azi2
-      !if (nint(azi2/1000.).ne.0.) then
-	  if (isnan(azi2)) then
-         print *,'**problem with azi2 updating, skipping to next ray'
-         print *,'azi2 = ',azi2
-         print *,plat,plon,xdeg,azi
-         print *,plat2,plon2,del,azi2
-         go to 760
-      end if
+				! azimuth calculation has problems near N and S pole
+				! the following check should exit to next ray if NaN problem occurs
+					!print *,'azi2 = ',azi2
+					  !if (nint(azi2/1000.).ne.0.) then
+					  if (isnan(azi2)) then
+						 print *,'**problem with azi2 updating, skipping to next ray'
+						 print *,'azi2 = ',azi2
+						 print *,plat,plon,xdeg,azi
+						 print *,plat2,plon2,del,azi2
+						 go to 760
+					  end if
 
                plat=plat2
                plon=plon2
@@ -1007,10 +1025,15 @@
                   idir=idir2
                   go to 200
                end if
+               
+777            end do     !end while loop on number of scattering events along ray segment
 
             end if     !end section wheRAN1(idum)om scattering occurred
 
          end if      !end section on scattering volume
+         
+
+         
 ! ------------------------------------ end section on volume scattering
 300      continue
 
