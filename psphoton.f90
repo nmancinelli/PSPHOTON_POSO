@@ -1123,13 +1123,17 @@
 	         end if
 	         
 	         	if (isnan(energy_vert) .or. isnan(energy_rad) .or. isnan(energy_tran)) then
-					print *, '***ERROR E1_NaN: energy is NaN'
+					print *, '***Warning E1_NaN: energy is NaN'
 					print *, energy_vert, energy_rad, energy_tran,ilay
 					print *, amp_rad, sinthe, amp2, slowang, degrad
 					print *, slowang, azidum1, azidum2
 					print *, plat2,plon2,plat,plon,xdum,azidum2
 					print *, svsh,slowang
-					stop
+					print *, 'If this problem occurs too often, you need to debug...'
+					energy_vert=0.0
+					energy_rad=0.0
+					energy_tran=0.0
+					!stop
 				 end if 
 	         	
 
