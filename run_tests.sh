@@ -14,15 +14,15 @@ sereno_orcutt
    4.0            !interface 2 (ocean-seds)
    7.0            !interface 2 (seds-crust)
    10.0           !interface 4 (moho)
-0.5 $1          !fracscat2, sigma2 (params for scattering at the seabed)
+0.0 0.0          !fracscat2, sigma2 (params for scattering at the seabed)
 4                !number of scattering volumes (to follow) (max=6)
-  4              !min scat depth (km)
+  5              !min scat depth (km)
   10             !max scat depth (km)
   999999          !max scat range from source (km)
   5.80 3.36       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  0.00             !rms perturbation
-  0.25 20.0        !scale length (km), aspect ratio (az/ax)
+  $1             !rms perturbation
+  0.1 1.0        !scale length (km), aspect ratio (az/ax)
     10              !min scat depth (km)
     100             !max scat depth (km)
     999999          !max scat range from source (km)
@@ -47,7 +47,7 @@ sereno_orcutt
 0 99999          !min,max number of scattering events for output
 5                !number of intrinsic Q layers (to follow) (max=6)
   4 10            !min,max depth of Q layer
-  300             !Qalpha
+  999999             !Qalpha
     10 100        !min,max depth of Q layer
     999999          !Qalpha
   100 250         !min,max depth of Q layer
@@ -63,25 +63,25 @@ EOF
 #
 cd TEST0
 rm out.debug
-write_do_file 0.5
+write_do_file 0.00
 bash do.photon > tmp &
 cd -
 #
 cd TEST1
 rm out.debug
-write_do_file 1.0
+write_do_file 0.01
 bash do.photon > tmp &
 cd -
 #
 cd TEST2
 rm out.debug
-write_do_file 5.0
+write_do_file 0.02
 bash do.photon > tmp &
 cd -
 #
 cd TEST3
 rm out.debug
-write_do_file 10.0
+write_do_file 0.04
 bash do.photon > tmp &
 cd -
 echo "  "
