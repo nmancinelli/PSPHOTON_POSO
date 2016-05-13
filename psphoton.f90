@@ -1164,6 +1164,13 @@
                   energy_tran=amp_tran**2 
                   energy_rad=amp2-energy_vert-energy_tran
                   
+                  if (energy_tran/energy_vert.gt.10**7) then  !fixes subtraction problem
+                    energy_vert=0.0
+                  end if
+                  if (energy_tran/energy_rad.gt.10**7) then  !fixes subtraction problem
+                    energy_rad=0.0
+                  end if
+                  
 				if (energy_vert<0.0 .or. energy_rad<0.0 .or. energy_tran<0.0) then
 					print *, '***ERROR E2_SUB: energy is negative'
 					print *, energy_vert, energy_rad, energy_tran,ilay
