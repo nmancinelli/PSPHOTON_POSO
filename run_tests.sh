@@ -3,7 +3,7 @@ function write_do_file {
 cat << EOF > do.photon
 ./psphoton << !
 sereno_orcutt
-$1              !assumed freq. (Hz), affects attenuation and scattering
+2.5              !assumed freq. (Hz), affects attenuation and scattering
 35.0             !assumed source depth (km)
 5                !radiate: (1) P,  (2) SH, (3) SV, (4) SH/SV, (5) P+S, (6) custom Es/Ep, (7) custom pmax
 50000            !number of ray parameters for tables (max=50000)
@@ -14,6 +14,7 @@ $1              !assumed freq. (Hz), affects attenuation and scattering
    4.0            !interface 2 (ocean-seds)
    7.0            !interface 2 (seds-crust)
    10.0           !interface 4 (moho)
+0.5 $1          !fracscat2, sigma2 (params for scattering at the seabed)
 4                !number of scattering volumes (to follow) (max=6)
   4              !min scat depth (km)
   10             !max scat depth (km)
@@ -27,14 +28,14 @@ $1              !assumed freq. (Hz), affects attenuation and scattering
     999999          !max scat range from source (km)
     8.08 4.47       !reference P & S velocity for layer
     0.8             !relative size of density perturbation (0.8 often assumed)
-    0.02              !rms perturbation
+    0.00              !rms perturbation
     10.0 0.05        !scale length (km), aspect ratio (az/ax)
   100             !min scat depth (km)
   300             !max scat depth (km)
   999999          !max scat range from source (km)
   8.08 4.47       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  0.08            !rms perturbation
+  0.00            !rms perturbation
   5.0 1.0         !scale length (km), aspect ratio (az/ax)
 	300              !min scat depth (km)
 	9999             !max scat depth (km)
@@ -62,25 +63,25 @@ EOF
 #
 cd TEST0
 rm out.debug
-write_do_file 2.00
+write_do_file 0.5
 bash do.photon > tmp &
 cd -
 #
 cd TEST1
 rm out.debug
-write_do_file 4.00
+write_do_file 1.0
 bash do.photon > tmp &
 cd -
 #
 cd TEST2
 rm out.debug
-write_do_file 8.00
+write_do_file 5.0
 bash do.photon > tmp &
 cd -
 #
 cd TEST3
 rm out.debug
-write_do_file 16.00
+write_do_file 10.0
 bash do.photon > tmp &
 cd -
 echo "  "

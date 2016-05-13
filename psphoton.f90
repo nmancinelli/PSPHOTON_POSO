@@ -34,6 +34,8 @@
       program psphoton
 	  
 	  implicit none
+	  
+	  real :: fracscat2 , sigma2
 	
       integer, parameter :: nlay0=653,nray0=50000
       real :: incoming_angle = 0.0, a_x, a_z, effective_alen, afp_effective, afp_z, afp_x
@@ -420,6 +422,9 @@
          print *,'Enter depth for interface ',i
          read *,depface(i)
       enddo
+
+	  print *, 'Enter fracscat and sigma for seabed topography'
+	  read *, fracscat2,sigma2
 
       print *,'Enter number of scattering volumes'
       read *,nscatvol
@@ -1273,7 +1278,22 @@
               if (fran.le.test1) then          !transmitted
                  ilay=ilay+2          
               else if (fran.le.test2) then     !reflected
-                 idir=-1              
+                 idir=-1
+                 if (ilay.eq.4) then !reverb off the seabed
+                 	 !print *, 'reverb at =', ilay
+					 psi2=0.25
+					 zeta2=0.25
+					 iwave1=1
+					 iwave2=1
+					 vp0=alpha(4)
+					 vs0=beta(4)
+					 !print *,''
+					 !print *, 'PONE = ', p(ip,iwave1),azi, vp0
+					 call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
+						plat,plon,x,distsum,idir,spol,p,np,ip,fracscat2,sigma2)
+					 !print *, 'TWO = ', p(ip,iwave2),azi, vp0
+                 	 !print *, ''
+                 end if              
               else if (fran.le.test3) then     !transmitted, converted
                  ilay=ilay+2          
                  iw2=3-iw
@@ -1449,7 +1469,6 @@
                   write (18,*) 'Pup face: ',ip,iw,depface(iface)
                   write (18,*) '  ',p(ip,iw),rt(2,1,iw,iw,iface,ip,iw)
               endif
-
 
                  if (fran.le.test1) then          !transmitted
                     ilay=ilay-2          
@@ -3123,3 +3142,210 @@
       R(J)=(FLOAT(IX1)+FLOAT(IX2)*RM2)*RM1
       RETURN
       END
+      
+!!!!!!!!!!!!!!NJM
+!Functions to generate gaussian angles
+  function uniform(vmin,vmax)
+  implicit none
+  real :: uniform, vmin,vmax
+  real :: rand_num
+  real :: r1
+  
+  call random_number(rand_num)
+  
+  r1 = vmax-vmin
+  uniform = rand_num*r1 + vmin
+  
+  end function
+
+  function normal(mean, sigma)
+
+  ! mean  : mean of distribution
+  ! sigma : number of standard deviations
+
+  implicit none
+
+  integer, parameter:: b8 = selected_real_kind(14)
+  real(b8), parameter :: pi = 3.141592653589793239_b8
+  real :: normal,mean,sigma
+  real rand_num
+  real(b8) tmp
+  real(b8) fac
+  real(b8) gsave
+  real(b8) rsq
+  real(b8) r1
+  real(b8) r2
+  integer flag
+  save flag
+  save gsave
+  data flag /0/
+
+  if (flag.eq.0) then
+    rsq=2.0_b8
+
+    do while(rsq.ge.1.0_b8.or.rsq.eq.0.0_b8) ! new from for do
+      call random_number(rand_num)
+      r1=2.0_b8*rand_num-1.0_b8
+      call random_number(rand_num)
+      r2=2.0_b8*rand_num-1.0_b8
+      rsq=r1*r1+r2*r2
+    enddo
+
+    fac=sqrt(-2.0_b8*log(rsq)/rsq)
+    gsave=r1*fac
+    tmp=r2*fac
+    flag=1
+  else
+    tmp=gsave
+    flag=0
+  endif
+
+  normal=sngl(tmp*sigma+mean)
+
+  return
+  end function normal
+      
+!subroutine to take care of scattering
+subroutine TOPOSCAT(&
+    nscat,vp0,vs0,iwave1,iwave2,azi,plat,plon,x,distsum,idir,spol,p,np,ip,&
+    fracscat,sigma)
+
+	implicit none
+	integer, parameter :: nray0 = 50000
+
+    integer :: nscat
+    real :: zeta2,psi2
+    integer :: iwave1,iwave2
+    real :: azi,azi2
+    integer :: np, ip, idir
+    real :: spol
+    real :: svsh
+    real :: x,distsum,xdeg
+    real :: uniform,deltanorm
+    real :: p(nray0,2)
+    real :: vp0,vs0,plat,plon,plat2,plon2
+    
+    real, parameter :: erad=6371.
+    real, parameter :: pi=3.1415927
+    real :: ecircum,kmdeg,degrad
+    real :: sigma, fracscat
+    
+    
+      ecircum=2.*pi*erad
+      kmdeg=ecircum/360.
+      degrad=180./pi
+
+	nscat=nscat+1
+	zeta2=uniform(0.0,360.0/degrad)
+        psi2=deltanorm(fracscat,sigma/degrad,90.0/degrad)
+        !zeta2=20./degrad
+	!psi2=3./degrad
+	!vp0=alpha(ilay+1)
+	!vs0=beta(ilay+1)
+	!iwave1=iw  !p
+	!iwave2=iw  !to p
+
+	azi2=azi
+	call SCATRAYPOL(p,np,iwave1,svsh,iwave2,ip,psi2,zeta2, &
+			   spol,vp0,vs0,idir,azi2)
+		   
+	xdeg=x/kmdeg
+	call SPH_LOC(plat,plon,xdeg,azi,plat2,plon2)
+	plat=plat2
+	plon=plon2
+	azi=azi2
+	x=0.
+	distsum=0.
+	
+	return
+	
+end subroutine
+
+
+
+
+
+
+
+  function expon(invlambda)
+
+    ! invlambda : controls width of distribution exp(lambda|x|)
+      implicit none
+      real :: expon, lambda, invlambda
+      real :: tmp
+      real :: rand_num
+      real :: sign
+                
+      lambda=1./invlambda
+      call random_number(rand_num)
+      tmp=1.-rand_num
+      tmp=log(tmp)
+                        
+      call random_number(rand_num)
+      if (rand_num > 0.5) then
+           sign=-1.0
+      else
+           sign=1.0
+      end if
+                                                          
+      expon=-invlambda*tmp*sign
+      return
+
+
+
+      end function expon
+
+  function cauchy(gamma0,limit)
+
+  ! mean  : mean of distribution
+  ! gamma : controls width of distribution
+
+  implicit none
+  real :: cauchy, gamma0
+  real :: tmp
+  real :: rand_num
+  real :: limit
+  double precision, parameter :: pi = 3.141592653589793239
+  do
+    call random_number(rand_num)
+    tmp = rand_num - 0.5
+    tmp = pi*tmp
+    tmp = tan(tmp)**2.0 !NJM kluge for wider tails
+    cauchy=tmp*gamma0
+    if (abs(cauchy) < limit) return
+  end do
+
+  return
+  end function cauchy
+
+  function deltanorm(frac,sigma,limit)
+!frac is fraction of scattered to transmitted energy
+!sigma is the width of the gaussian pulse
+!limit are the plus minus bounds on the distribution
+  implicit none
+  real :: deltanorm,frac,limit
+  real :: tmp,r1,r2,rsq,fac,sigma
+  real :: rand_num
+
+
+  call random_number(rand_num)
+  if (rand_num > frac) then
+          deltanorm=0.0
+          return
+  else
+    do
+      call random_number(rand_num)
+      r1=2.*rand_num-1.
+      call random_number(rand_num)
+      r2=2.*rand_num-1.
+      rsq=r1*r1+r2*r2
+
+      fac=sqrt(-2.*log(rsq)/rsq)
+      tmp=r2*fac 
+      deltanorm=tmp*sigma
+      if (abs(deltanorm)<=limit) return
+    enddo
+  end if
+
+  end function deltanorm
+

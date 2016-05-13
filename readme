@@ -19,7 +19,10 @@ Modifications include:
 		the seabed interface), and upgoing phonons are counted in layer 6 (i.e. below the seabed interface).
 	Intrinsic Q is set at 999999 below the crust.
 	Initial heterogeneity model comes from Kennett and Furumura (2013a).
+	Allows for multiple scattering along a ray segment when the afp is shorter than the segments (kluge).
 
+Observations:
+	Eps~8% in the asthenosphere makes very large S codas. S/P energy ratio is large. Transverse P very weak.
 
 Issues:
 	Adding vertical dykes to the crust seems to generate many warnings and errors in the phonon code.
@@ -27,4 +30,3 @@ Issues:
 
 To do:
 	Allow for topography on the seabed (or any interface).
-	Allow for multiple scattering per ray segments for short afp.
