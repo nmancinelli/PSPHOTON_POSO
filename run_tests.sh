@@ -3,7 +3,7 @@ function write_do_file {
 cat << EOF > do.photon
 ./psphoton << !
 sereno_orcutt
-4.0              !assumed freq. (Hz), affects attenuation and scattering
+2.0              !assumed freq. (Hz), affects attenuation and scattering
 35.0             !assumed source depth (km)
 5                !radiate: (1) P,  (2) SH, (3) SV, (4) SH/SV, (5) P+S, (6) custom Es/Ep, (7) custom pmax
 50000            !number of ray parameters for tables (max=50000)
@@ -14,7 +14,7 @@ sereno_orcutt
    4.0            !interface 2 (ocean-seds)
    7.0            !interface 2 (seds-crust)
    10.0           !interface 4 (moho)
-0.5 10.0          !fracscat2, sigma2 (params for scattering at the seabed)
+0.00 10.0          !fracscat2, sigma2 (params for scattering at the seabed)
 4                !number of scattering volumes (to follow) (max=6)
   5              !min scat depth (km)
   10             !max scat depth (km)
@@ -22,20 +22,20 @@ sereno_orcutt
   5.80 3.36       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
   $1             !rms perturbation
-  0.1 1.0        !scale length (km), aspect ratio (az/ax)
+  1.0 1.0        !scale length (km), aspect ratio (az/ax)
     10              !min scat depth (km)
     100             !max scat depth (km)
     999999          !max scat range from source (km)
     8.08 4.47       !reference P & S velocity for layer
     0.8             !relative size of density perturbation (0.8 often assumed)
-    0.03              !rms perturbation
+    0.04              !rms perturbation
     10.0 0.05        !scale length (km), aspect ratio (az/ax)
   100             !min scat depth (km)
   300             !max scat depth (km)
   999999          !max scat range from source (km)
   8.08 4.47       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  0.03            !rms perturbation
+  0.04            !rms perturbation
   10.0 0.05         !scale length (km), aspect ratio (az/ax)
 	300              !min scat depth (km)
 	9999             !max scat depth (km)
@@ -47,7 +47,7 @@ sereno_orcutt
 0 99999          !min,max number of scattering events for output
 5                !number of intrinsic Q layers (to follow) (max=6)
   4 10            !min,max depth of Q layer
-  2000             !Qalpha
+  500             !Qalpha
     10 100        !min,max depth of Q layer
     2000          !Qalpha
   100 250         !min,max depth of Q layer
@@ -69,19 +69,19 @@ cd -
 #
 cd TEST1
 rm out.debug
-write_do_file 0.01
+write_do_file 0.05
 bash do.photon > tmp &
 cd -
 #
 cd TEST2
 rm out.debug
-write_do_file 0.02
+write_do_file 0.10
 bash do.photon > tmp &
 cd -
 #
 cd TEST3
 rm out.debug
-write_do_file 0.04
+write_do_file 0.20
 bash do.photon > tmp &
 cd -
 echo "  "

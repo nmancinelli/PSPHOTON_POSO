@@ -23,6 +23,7 @@ Modifications include:
 
 Observations:
 	Eps~8% in the asthenosphere makes very large S codas. S/P energy ratio is large. Transverse P very weak.
+	Adding strong heterogeneity to the crust boosts transverse P.  Presumably seabed topo has a similar effect.
 
 Issues:
 	Adding vertical dykes to the crust seems to generate many warnings and errors in the phonon code.

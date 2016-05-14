@@ -36,6 +36,8 @@
 	  implicit none
 	  
 	  real :: fracscat2 , sigma2
+	  
+	  real :: azidum1_test, azidum2_test
 	
       integer, parameter :: nlay0=653,nray0=50000
       real :: incoming_angle = 0.0, a_x, a_z, effective_alen, afp_effective, afp_z, afp_x
@@ -1054,8 +1056,27 @@
             call SPH_AZI(0.,0.,plat2,plon2,xdeg,azidum)
             
             psecdeg=p(ip,iw)*111.19
+            
             call SPH_AZIDP(plat2,plon2,0.,0.,xdum,azidum1)      !to source
+            
+            if (xdum < 0.01) then !SPH_AZIDP not accurate, try this method
+            	!to source
+            	call SPH_AZI_CARTESIAN(plat2,plon2,0.0,0.0,xdum,azidum1_test)
+                !print *, 'TEST 1 = ', azidum1, azidum1_test, xdum, plat2,plon2,0.0,0.0
+                azidum1=azidum1_test
+            end if
+            
+            
+            
             call SPH_AZIDP(plat2,plon2,plat,plon,xdum,azidum2)  !to last scatterer (or origin if none)
+            
+            if (xdum < 0.01) then !SPH_AZIDP not accurate, try this method
+                !to last scat
+                call SPH_AZI_CARTESIAN(plat2,plon2,plat,plon,xdum,azidum2_test)
+                !print *, 'TEST 2 = ', azidum2, azidum2_test, xdum, plat2,plon2,plat,plon
+                azidum2=azidum2_test
+           end if
+          
 
             if (iwrap.eq.1) azidum2=azidum2+180.         !wrap-around correction
             slowang=azidum2-azidum1
@@ -1293,10 +1314,8 @@
                  idir=-1
                  if (ilay.eq.4) then !reverb off the seabed
                  	 !print *, 'reverb at =', ilay
-					 psi2=0.25
-					 zeta2=0.25
-					 iwave1=1
-					 iwave2=1
+					 iwave1=1  !P to
+					 iwave2=1  !P
 					 vp0=alpha(4)
 					 vs0=beta(4)
 					 !print *,''
@@ -1677,7 +1696,36 @@
       stop
 	  
       end program psphoton
-	  
+
+
+subroutine SPH_AZI_CARTESIAN(plat2,plon2,plat,plon,del,azi)
+    ! A routine to estimate SPH and AZI for very small del
+    ! outputs del (degrees) and azi (degrees)
+    ! azi is azimuth from N from point 1 to point 2
+    !
+	implicit none
+	real :: plat,plon,plat2,plon2,del,azi
+	real :: dy,dx,dx_tmp,cosang,del2
+	real, parameter :: degrad = 57.29577951
+	
+	
+	dy=plat2-plat
+	dx_tmp=plon2-plon
+	
+	if (dx_tmp.gt.180) then ! there is a shorter gc path
+	  dx_tmp=360.- dx_tmp
+	end if
+	
+	cosang=cos(plat/degrad)
+	dx=dx_tmp*cosang
+	del2=dy**2+dx**2
+	del=sqrt(del2)
+	azi=atan2(dx,dy)*degrad + 180.0
+	if (azi.lt.0.0) azi=360.0+azi
+	return
+
+end subroutine
+
 
 ! UPDATE_P gets new ray index number for P/S or S/P conversion
 !  Inputs:    p  =  table of ray parameters for both P and S
