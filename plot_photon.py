@@ -14,13 +14,13 @@ def main():
 	ax5=plt.subplot(3,2,5)
 	ax6=plt.subplot(3,2,6)
 
-	plot_row(ax1,ax2,'out.photon_z')
-	plot_row(ax3,ax4,'out.photon_rad')
-	plot_row(ax5,ax6,'out.photon_tran')
+	plot_row(ax1,ax2,'out.photon_z','Z')
+	plot_row(ax3,ax4,'out.photon_rad','R')
+	plot_row(ax5,ax6,'out.photon_tran','T')
 	plt.tight_layout()
 	plt.savefig('wavefield.eps')
 
-def plot_row(ax1,ax2,fname):
+def plot_row(ax1,ax2,fname,component_label):
 	from matplotlib import pylab
 	import numpy as np
 	A,t,x = loadMCarray_only(fname)
@@ -32,6 +32,7 @@ def plot_row(ax1,ax2,fname):
 		
 	ax1.set_xlabel('Range (deg)')
 	ax1.set_ylabel('Time  (s)')
+	ax1.text(18.,50.,component_label)
 	# Now adding the colorbar
 	#cbaxes = fig.add_axes([0.25, 0.2, 0.2, 0.015]) 
 	#cb = pylab.colorbar(img, cax = cbaxes,orientation='horizontal')
