@@ -501,11 +501,15 @@
 
          q(i,1)=999999.
 
+
+
          do k=1,nqlay
             if (z_s(i).ge.zminq(k).and.z_s(i).le.zmaxq(k)) then
                q(i,1)=qalpha(k)
             end if
          enddo
+
+!		 print *,z(i),alpha(i),beta(i)
 
          q(i,2)=(4./9.)*q(i,1)    !set Q for S using approx. for Poisson solid
 
@@ -514,7 +518,7 @@
       stop
 12    close (11)
       vpmin=alpha(1)
-      vsmin=beta(6)
+      vsmin=beta(42)
       vpsource=alpha(izsource)
       vssource=beta(izsource)
       print *,'finished reading model'
@@ -719,6 +723,14 @@
 
 110   continue    !end loop on iwave for P and S
 
+!do ip = 1,np
+!do ilay = 1,nlay
+!	if (p(ip,2) > 0.209459767 .and. p(ip,2) < 0.222793981) then
+!    	print *, iddir(ilay,ip,2), p(ip,2), slow(ilay,2)
+!    end if
+!end do
+!enddo
+
       tmax=500.     !3000 s = 50 minutes
       nray=0
       nsurf=0
@@ -807,10 +819,19 @@
       if (t.gt.tmax .or. z_s(ilay).gt.300.) go to 350
       tstar=tstar+dtstar(ilay,ip,iw)
       idir=idir*iddir(ilay,ip,iw)
+      
 
- !     print *,'200 = ',iw,ip,ilay,x,t,idir
+
+
+!     print *,'200 = ',iw,ip,ilay,x,t,dx(ilay,ip,iw),dt(ilay,ip,iw),idir,iddir(ilay,ip,iw)
 !      print *,'ampstart = ',ampstart
 !      if (nray.eq.467.or.nray.eq.648) print *,'2: ',ip,iw,idir,ilay
+
+!Temporary debugging kluge
+!	if (ip == 36665 .and. ilay == 103 .and. iddir(ilay,ip,iw)==-1 ) then
+!		print *, 'stuck point'
+!	
+!	end if
 
 		   if (iw == 1) then
 			incoming_angle = asin(p(ip,iw)*alpha(ilay))
@@ -840,8 +861,6 @@
                afp_x=1./scatprob(iscat,iw,0,1)
                afp_z=1./scatprob(iscat,iw,0,2)
                
-               
-               
                !freepath=EXPDEV(idum)*afp
                !distsum=0.
             !end if
@@ -864,9 +883,7 @@
 		   	
 		   	!if (iscat==2) print *, afp_x, afp_z, afp_effective, incoming_angle
 
-			!print *,incoming_angle
-			
-
+			!print *,incoming_angle	
 
 !--------------------------------------------------------------------------             
 !--------------------SCATTERING SECTION-------------------------------------
@@ -914,9 +931,7 @@
                a_z=alen(iscat)*aspect_z_over_x(iscat)
                
                effective_alen=a_z*cos(incoming_angle)**2+a_x*sin(incoming_angle)**2
-               
-               
-               
+            
                !print *, tmpb0,tmpb1,effective_alen,incoming_angle*180.0/3.14159
                               
                if (idebug.ne.0) then
@@ -1008,7 +1023,6 @@
                   write (18,*) 'S: ',iw,ipp,ip,azi,azi2,plat,plon,idir
                   write (18,*) ' '
                endif
-               
 
                if (idir2.eq.0) then
                   print *,'DEBUG SCATRAYPOL'
@@ -1027,8 +1041,8 @@
                iw=iwave
                if (idir.ne.idir2) then  !switched dir, go through layer again
 ! I thought next line would fix DEBUG SCATRAYP error but it did not
-                  if (idir2.eq.-1.and.iddir(ilay,ip,iw).eq.-1) idir2=1
-				  !print *, idir, idir2
+                  !if (idir2.eq.-1.and.iddir(ilay,ip,iw).eq.-1) idir2=1  !this line appears to cause phonons to get stuck when there is LVZ
+				  !print *, 'switch', ilay, ip, idir, idir2, iddir(ilay,ip,iw)
                   idir=idir2
                   go to 200
                end if
@@ -1039,16 +1053,14 @@
 
          end if      !end section on scattering volume
          
-
-         
 ! ------------------------------------ end section on volume scattering
 300      continue
 
 
 !--------------------------------- INTERFACE SECTION
 ! then deal with interfaces
-      if ((idir.eq.-1 .and. ilay.eq.6) .or. (idir.eq.1 .and. ilay.eq.4))  then  !at ocean bottom
-      		!print *, 'idir, ilay = ',idir, ilay
+      if ((idir.eq.-1 .and. z_s(ilay).eq. 4.0).or. (idir.eq.1 .and. z_s(ilay) == 4.0))  then  !at ocean bottom
+      		!print *, 'idir, ilay, iw = ',idir, ilay, iw
             tmin=t/60.
             xdeg=x/kmdeg
             iwrap=mod(int(xdeg/180.),2)            
@@ -1066,8 +1078,6 @@
                 azidum1=azidum1_test
             end if
             
-            
-            
             call SPH_AZIDP(plat2,plon2,plat,plon,xdum,azidum2)  !to last scatterer (or origin if none)
             
             if (xdum < 0.01) then !SPH_AZIDP not accurate, try this method
@@ -1076,7 +1086,6 @@
                 !print *, 'TEST 2 = ', azidum2, azidum2_test, xdum, plat2,plon2,plat,plon
                 azidum2=azidum2_test
            end if
-          
 
             if (iwrap.eq.1) azidum2=azidum2+180.         !wrap-around correction
             slowang=azidum2-azidum1
@@ -1115,7 +1124,7 @@
 
             if (nscat.ge.nscatmin.and.nscat.le.nscatmax) then
                rbin(it,ix)=rbin(it,ix)+amp2
-               if (iw.eq.1) then
+               if (iw.eq.1) then !P phonon
                   rbin_p(it,ix)=rbin_p(it,ix)+amp2
                   sinthe=p(ip,iw)*alpha(ilay)
                   amp_rad=sinthe*sqrt(amp2)
@@ -1133,15 +1142,15 @@
                   rbin_tran(it,ix)=rbin_tran(it,ix)+energy_tran
 
 
-	         if (energy_vert<0.0 .or. energy_rad<0.0 .or. energy_tran<0.0) then
-	         	print *, '***ERROR E1: energy is negative'
-				print *, energy_vert, energy_rad, energy_tran,ilay
-				print *, amp_rad, sinthe, amp2, slowang, degrad
-				print *, slowang, azidum1, azidum2
-				print *, plat2,plon2,plat,plon,xdum,azidum2
-				print *, svsh,slowang
-	         	stop
-	         end if
+				 if (energy_vert<0.0 .or. energy_rad<0.0 .or. energy_tran<0.0) then
+					print *, '***ERROR E1: energy is negative'
+					print *, energy_vert, energy_rad, energy_tran,ilay
+					print *, amp_rad, sinthe, amp2, slowang, degrad
+					print *, slowang, azidum1, azidum2
+					print *, plat2,plon2,plat,plon,xdum,azidum2
+					print *, svsh,slowang
+					stop
+				 end if
 	         
 	         	if (isnan(energy_vert) .or. isnan(energy_rad) .or. isnan(energy_tran)) then
 					print *, '***Warning E1_NaN: energy is NaN'
@@ -1157,7 +1166,6 @@
 					!stop
 				 end if 
 	         	
-
                   if (iforcerefl.eq.-1) then                  
                    do k=1,nslowout
                      if (xdeg.ge.xslow1(k).and.xdeg.le.xslow2(k).and. &
@@ -1172,12 +1180,12 @@
                    enddo
                   endif
                   
-               else
+               else  !S phonon
                   svfrac=cos(svsh)**2
                   shfrac=1.-svfrac
                   rbin_sv(it,ix)=rbin_sv(it,ix)+amp2*svfrac
                   rbin_sh(it,ix)=rbin_sh(it,ix)+amp2*shfrac
-                  sinthe=p(ip,iw)*beta(6) !crust level
+                  sinthe=p(ip,iw)*beta(ilay) !crust level
                   !amp_vert=sinthe*sqrt(amp2)
                   amp_vert=sinthe*sqrt(amp2) * cos(svsh)
                   amp_tran=sin(svsh)*sqrt(amp2)
@@ -1240,13 +1248,10 @@
 					print *, svsh,slowang
 					print *, amp_rad_tmp, amp_tran_tmp
 					stop
-				 end if 
-				 
+				 end if			 
                   
                end if
             end if
-            
-            
 
             if (xdeg.ge.xwind1.and.xdeg.le.xwind2.and. &
                 tmin.ge.twind1.and.tmin.le.twind2) then
@@ -1308,22 +1313,25 @@
                  write (18,*) 'Pdown face: ',ip,iw,depface(iface)
               endif
 
+		   !  print *, test1, test2, test3, ilay
+
               if (fran.le.test1) then          !transmitted
                  ilay=ilay+2          
               else if (fran.le.test2) then     !reflected
                  idir=-1
-                 if (ilay.eq.4) then !reverb off the seabed
-                 	 !print *, 'reverb at =', ilay
+                ! print *, 'ilay, z_s(ilay+1) = ', ilay, z_s(ilay+1) 
+                 if (z_s(ilay+1)==5.0) then !P reverb off the seabed
+                ! 	 print *, 'P reverb at =', ilay
 					 iwave1=1  !P to
 					 iwave2=1  !P
-					 vp0=alpha(4)
-					 vs0=beta(4)
-					 !print *,''
-					 !print *, 'PONE = ', p(ip,iwave1),azi, vp0
+					 vp0=alpha(ilay)
+					 vs0=beta(ilay)
+				!	 print *,''
+				!	 print *, 'PONE = ', p(ip,iwave1),azi, vp0, fracscat2, sigma2
 					 call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
 						plat,plon,x,distsum,idir,spol,p,np,ip,fracscat2,sigma2)
-					 !print *, 'TWO = ', p(ip,iwave2),azi, vp0
-                 	 !print *, ''
+				!	 print *, 'TWO = ', p(ip,iwave2),azi, vp0, fracscat2, sigma2
+                ! 	 print *, ''
                  end if              
               else if (fran.le.test3) then     !transmitted, converted
                  ilay=ilay+2          
@@ -1417,10 +1425,8 @@
             !depsave(isave,1)=0.
             !depsave(isave,2)=0.
             !iwsave(isave)=iw
-            
            
             nsurf=nsurf+1
-      
 
             if (iw.eq.1.and.ilay==1) then         !upgoing P-wave at surface
 
@@ -1502,7 +1508,23 @@
               endif
 
                  if (fran.le.test1) then          !transmitted
-                    ilay=ilay-2          
+                    ilay=ilay-2
+                    
+                 if (z_s(ilay+2)==5.0) then !transmitted through the crust-sediment interface
+                 	 !print *, 'transmitted, scattered P through, to =', ilay+2, ilay
+					 iwave1=1  !P to
+					 iwave2=1  !P
+					 vp0=alpha(ilay)
+					 vs0=beta(ilay)
+					 !print *,''
+					 !print *, 'PONE = ', p(ip,iwave1),azi, vp0, fracscat2, sigma2
+					 call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
+						plat,plon,x,distsum,idir,spol,p,np,ip,fracscat2,sigma2)
+					 !print *, 'TWO = ', p(ip,iwave2),azi, vp0, fracscat2, sigma2
+                 	 !print *, ''
+                 end if   
+                    
+                       
                  else if (fran.le.test2) then     !reflected
                     idir=1              
                  else if (fran.le.test3) then     !transmitted, converted
@@ -1945,6 +1967,7 @@ end subroutine
          print *,'*WARNING SCATRAYPOL: ',ip,iw2,slow,ptarg, &
                     p(1,iw2),p(np,iw2)
       end if
+
 
       return
       end
