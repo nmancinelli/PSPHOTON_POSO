@@ -1248,7 +1248,9 @@
 					print *, svsh,slowang
 					print *, amp_rad_tmp, amp_tran_tmp
 					stop
-				 end if			 
+				 end if
+				 
+				! print *, 'energy_vert, energy_rad, energy_tran,ilay = ', energy_vert, energy_rad, energy_tran,ilay,svsh,slowang
                   
                end if
             end if
@@ -3334,12 +3336,13 @@ subroutine TOPOSCAT(&
     integer :: iwave1,iwave2
     real :: azi,azi2
     integer :: np, ip, idir
-    real :: spol=0  !dont pipe nonzero spol into SCATRAYPOL
+    real :: spol
     real :: svsh
     real :: x,distsum,xdeg
     real :: uniform,deltanorm
     real :: p(nray0,2)
     real :: vp0,vs0,plat,plon,plat2,plon2
+    real :: tmp
     
     real, parameter :: erad=6371.
     real, parameter :: pi=3.1415927
@@ -3355,8 +3358,21 @@ subroutine TOPOSCAT(&
     psi2=deltanorm(fracscat,sigma/degrad,90.0/degrad)
 
 	azi2=azi
-	call SCATRAYPOL(p,np,iwave1,svsh,iwave2,ip,psi2,zeta2, &
+	
+	!print *, '   TOPOSCAT 1: svsh old, new = ', svsh, spol, iwave2
+	
+	    !for S waves perturb polarization
+	if (iwave2==2) then
+		tmp=svsh
+		call SCATRAYPOL(p,np,iwave1,svsh,iwave2,ip,psi2,zeta2, &
 			   spol,vp0,vs0,idir,azi2)
+		svsh=tmp+zeta2*sin(psi2)  !not sure if this is right
+	else
+		call SCATRAYPOL(p,np,iwave1,svsh,iwave2,ip,psi2,zeta2, &
+			   spol,vp0,vs0,idir,azi2)
+	end if
+	
+	!print *, '   TOPOSCAT 2: svsh old, new = ', svsh, spol, iwave2
 		   
 	xdeg=x/kmdeg
 	call SPH_LOC(plat,plon,xdeg,azi,plat2,plon2)
@@ -3365,8 +3381,6 @@ subroutine TOPOSCAT(&
 	azi=azi2
 	x=0.
 	distsum=0.
-	
-	if (iwave2==2) svsh=svsh+zeta2*cos(psi2)  !not sure if this is right
 	
 	return
 	
