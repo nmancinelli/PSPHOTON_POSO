@@ -1537,7 +1537,24 @@
                     end if
                     iw=iw2
                     ip=ip2
-                    svsh=0.          
+                    svsh=0.
+                    
+                    
+                    if (z_s(ilay+2)==5.0) then !transmitted through the crust-sediment interface
+						!print *, 'transmitted, scattered P through, to S =', ilay+2, ilay
+						iwave1=2  !S to
+						iwave2=2  !S
+						vp0=alpha(ilay)
+						vs0=beta(ilay)
+						!print *,''
+						!print *, 'PONE = ', p(ip,iwave1),azi, vp0, fracscat2, sigma2, svsh
+						call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
+							plat,plon,x,distsum,idir,svsh,p,np,ip,fracscat2,sigma2)
+						!print *, 'TWO = ', p(ip,iwave2),azi, vp0, fracscat2, sigma2, svsh
+						!print *, ''
+                 	end if
+                    
+                         
                  else                             !reflected, converted
                     idir=1
                     iw2=3-iw
@@ -1591,6 +1608,21 @@
                     svamp=sqrt(svfrac*rt(2,2,2,2,iface,ip,iw))
                     shamp=sqrt(shfrac*rt(2,2,3,3,iface,ip,iw))
                     svsh=atan2(shamp,svamp)
+                    
+                  if (z_s(ilay+2)==5.0) then !transmitted through the crust-sediment interface
+                  	!print *, 'transmitted S through, to S =', ilay+2, ilay
+					iwave1=2  !S to
+					iwave2=2  !S
+					vp0=alpha(ilay)
+					vs0=beta(ilay)
+					!print *,''
+					!print *, 'PONE = ', p(ip,iwave1),azi, vp0, fracscat2, sigma2, svsh
+					call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
+						plat,plon,x,distsum,idir,svsh,p,np,ip,fracscat2,sigma2)
+					!print *, 'TWO = ', p(ip,iwave2),azi, vp0, fracscat2, sigma2, svsh
+                 	!print *, ''
+                   end if
+                    
                  else
                     idir=1                       !S to S reflected
                     svamp=sqrt(svfrac*rt(2,1,2,2,iface,ip,iw))   !SV to SV refl
@@ -1966,6 +1998,7 @@ end subroutine
       if (ip.lt.1.or.ip.gt.np) then
          print *,'*WARNING SCATRAYPOL: ',ip,iw2,slow,ptarg, &
                     p(1,iw2),p(np,iw2)
+         if (ip.gt.np) ip=np
       end if
 
 
@@ -3290,7 +3323,7 @@ end subroutine
       
 !subroutine to take care of scattering
 subroutine TOPOSCAT(&
-    nscat,vp0,vs0,iwave1,iwave2,azi,plat,plon,x,distsum,idir,spol,p,np,ip,&
+    nscat,vp0,vs0,iwave1,iwave2,azi,plat,plon,x,distsum,idir,svsh,p,np,ip,&
     fracscat,sigma)
 
 	implicit none
@@ -3301,7 +3334,7 @@ subroutine TOPOSCAT(&
     integer :: iwave1,iwave2
     real :: azi,azi2
     integer :: np, ip, idir
-    real :: spol
+    real :: spol=0  !dont pipe nonzero spol into SCATRAYPOL
     real :: svsh
     real :: x,distsum,xdeg
     real :: uniform,deltanorm
@@ -3313,20 +3346,13 @@ subroutine TOPOSCAT(&
     real :: ecircum,kmdeg,degrad
     real :: sigma, fracscat
     
-    
       ecircum=2.*pi*erad
       kmdeg=ecircum/360.
       degrad=180./pi
 
 	nscat=nscat+1
 	zeta2=uniform(0.0,360.0/degrad)
-        psi2=deltanorm(fracscat,sigma/degrad,90.0/degrad)
-        !zeta2=20./degrad
-	!psi2=3./degrad
-	!vp0=alpha(ilay+1)
-	!vs0=beta(ilay+1)
-	!iwave1=iw  !p
-	!iwave2=iw  !to p
+    psi2=deltanorm(fracscat,sigma/degrad,90.0/degrad)
 
 	azi2=azi
 	call SCATRAYPOL(p,np,iwave1,svsh,iwave2,ip,psi2,zeta2, &
@@ -3339,6 +3365,8 @@ subroutine TOPOSCAT(&
 	azi=azi2
 	x=0.
 	distsum=0.
+	
+	if (iwave2==2) svsh=svsh+zeta2*cos(psi2)  !not sure if this is right
 	
 	return
 	
