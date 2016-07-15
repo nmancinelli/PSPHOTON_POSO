@@ -3,7 +3,7 @@ function write_do_file {
 cat << EOF > do.photon
 ./psphoton << !
 sereno_orcutt
-2.0              !assumed freq. (Hz), affects attenuation and scattering
+10.0             !assumed freq. (Hz), affects attenuation and scattering
 35.0             !assumed source depth (km)
 5                !radiate: (1) P,  (2) SH, (3) SV, (4) SH/SV, (5) P+S, (6) custom Es/Ep, (7) custom pmax
 50000            !number of ray parameters for tables (max=50000)
@@ -21,7 +21,7 @@ sereno_orcutt
   999999          !max scat range from source (km)
   5.80 3.36       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  $1             !rms perturbation
+  0.0             !rms perturbation
   1.0 1.0        !scale length (km), aspect ratio (az/ax)
     10              !min scat depth (km)
     100             !max scat depth (km)
@@ -29,14 +29,14 @@ sereno_orcutt
     8.08 4.47       !reference P & S velocity for layer
     0.8             !relative size of density perturbation (0.8 often assumed)
     0.04              !rms perturbation
-    10.0 0.05        !scale length (km), aspect ratio (az/ax)
+    10.0 $1        !scale length (km), aspect ratio (az/ax)
   100             !min scat depth (km)
   300             !max scat depth (km)
   999999          !max scat range from source (km)
   8.08 4.47       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
   0.04            !rms perturbation
-  10.0 0.05         !scale length (km), aspect ratio (az/ax)
+  10.0 $1         !scale length (km), aspect ratio (az/ax)
 	300              !min scat depth (km)
 	9999             !max scat depth (km)
 	999999           !max scat range from source (km)
@@ -49,7 +49,7 @@ sereno_orcutt
   4 10            !min,max depth of Q layer
   500             !Qalpha
     10 100        !min,max depth of Q layer
-    2000          !Qalpha
+    999999999          !Qalpha
   100 250         !min,max depth of Q layer
   2000             !Qalpha
     250 410       !min,max depth of Q layer
@@ -63,28 +63,27 @@ EOF
 #
 cd TEST0
 rm out.debug
-write_do_file 0.00
+write_do_file 0.05
 bash do.photon > tmp &
 cd -
 #
 cd TEST1
 rm out.debug
-write_do_file 0.05
+write_do_file 0.25
 bash do.photon > tmp &
 cd -
 #
 cd TEST2
 rm out.debug
-write_do_file 0.10
+write_do_file 0.50
 bash do.photon > tmp &
 cd -
 #
 cd TEST3
 rm out.debug
-write_do_file 0.20
+write_do_file 1.00
 bash do.photon > tmp &
 cd -
 echo "  "
 echo " Jobs launched. "
 echo "  "
-
