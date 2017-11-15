@@ -1,2 +1,10 @@
 *.dSYM
 *.pyf
+*.so
+psphoton
+TESTS_FROM_2016
+EXAMPLE
+bin
+BACKGROUND_VELOCITY_MODELS
+.DS_Store
+.idea/
