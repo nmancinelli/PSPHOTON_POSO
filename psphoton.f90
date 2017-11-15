@@ -1247,7 +1247,12 @@
 					print *, plat2,plon2,plat,plon,xdum,azidum2
 					print *, svsh,slowang
 					print *, amp_rad_tmp, amp_tran_tmp
-					stop
+					!stop
+					print *, 'If this problem occurs too often, you need to debug...'
+					print *, '...bug may be due to imprecise calc of azidum'
+					energy_vert=0.0
+					energy_rad=0.0
+					energy_tran=0.0
 				 end if
 				 
 				! print *, 'energy_vert, energy_rad, energy_tran,ilay = ', energy_vert, energy_rad, energy_tran,ilay,svsh,slowang
