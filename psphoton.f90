@@ -517,6 +517,11 @@
       print *,'***nlay0 maximum exceeded in model, nlay0 = ',nlay0
       stop
 12    close (11)
+
+       do k=1,nlay0
+             print *, 'z, zs, alpha, beta, q_alpha, q_beta =  ', z(k), z_s(k), alpha(k), beta(k), q(k,1), q(k,2)
+       end do
+
       vpmin=alpha(1)
       vsmin=beta(6)
 
