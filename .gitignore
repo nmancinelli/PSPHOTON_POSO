@@ -8,3 +8,6 @@ bin
 BACKGROUND_VELOCITY_MODELS
 .DS_Store
 .idea/
+EXAMPLE.BAK
+tests/
+tools/__pycache__/
