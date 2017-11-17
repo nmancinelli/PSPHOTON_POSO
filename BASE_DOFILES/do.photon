@@ -25,14 +25,14 @@ sereno_orcutt
     999999          !max scat range from source (km)
     8.08 4.47       !reference P & S velocity for layer
     0.8             !relative size of density perturbation (0.8 often assumed)
-    0.02            !rms perturbation
+    0.025           !rms perturbation
 	2.5 1.0        !scale length (km), aspect ratio (az/ax)
   100             !min scat depth (km)
   300             !max scat depth (km)
   999999          !max scat range from source (km)
   8.08 4.47       !reference P & S velocity for layer
   0.8             !relative size of density perturbation (0.8 often assumed)
-  0.02            !rms perturbation
+  0.025            !rms perturbation
   2.5 1.0         !scale length (km), aspect ratio (az/ax)
 	300              !min scat depth (km)
 	9999             !max scat depth (km)
