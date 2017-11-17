@@ -74,7 +74,7 @@ def loadMCarray_only(arrayfile):
 	
 	model,x1,x2,nxdim,t1,t2,ntdim = rpa.read_phonon_array(arrayfile)
 	model=model[:ntdim,:nxdim]
-	print x1,x2,nxdim,t1,t2,ntdim
+	print(x1,x2,nxdim,t1,t2,ntdim)
 	rax=numpy.linspace(x1,x2,nxdim)
 	tax=numpy.linspace(t1,t2,ntdim)
 
