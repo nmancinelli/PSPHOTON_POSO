@@ -2,7 +2,7 @@ from os import mkdir, chdir, getcwd, symlink
 from subprocess import Popen
 
 class ModelSuite():
-    def __init__(self, name='TRIALS', param_to_test='freq', base_file='EXAMPLE/TEST0/do.photon', values_to_test=[]):
+    def __init__(self, name='TRIALS', param_to_test='freq', base_file='EXAMPLE/TEST2/do.photon', values_to_test=[]):
 
         root = getcwd()
 
