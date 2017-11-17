@@ -1989,14 +1989,14 @@ end subroutine
 
       if (ip.le.0.or.ip.gt.np+20) then
          print *,'**SCATRAYPOL problema'
-         print *,ip,np,frac,iw1,iw2
-         print *,ptarg,p(1,iw2),p(np,iw2),p(1,iw2)
-         print *,the,slow(iw2),b3
+         print *,'ip,np,frac,iw1,iw2 = ', ip,np,frac,iw1,iw2
+         print *,'ptarg,p(1,iw2),p(np,iw2),p(1,iw2) =', ptarg,p(1,iw2),p(np,iw2),p(1,iw2)
+         print *,'the,slow(iw2),b3 = ', the,slow(iw2),b3
          print *,'a3 = ',a3
          print *,'a1 = ',a1
-         print *,np,iw1,svsh0,iw2,ip
-         print *,psi,zeta,spol,vp0,vs0
-         print *,idir,azi0
+         print *,'np,iw1,svsh0,iw2,ip = ', np,iw1,svsh0,iw2,ip
+         print *,'psi,zeta,spol,vp0,vs0 = ', psi,zeta,spol,vp0,vs0
+         print *,'idir,azi0 = ', idir,azi0
          stop
       end if
 
