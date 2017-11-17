@@ -13,3 +13,4 @@ tests/
 tools/__pycache__/
 TRIALS
 test_prog.py
+read_phonon_array/__pycache__/
