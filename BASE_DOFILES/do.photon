@@ -53,5 +53,5 @@ sereno_orcutt
     2000           !Qalpha
   410 9999        !min,max depth of Q layer
   999999            !Qalpha
-200000           !write output at multiples of this number of rays
+1000000           !write output at multiples of this number of rays
 0                !out.debug: 0=none, 1=full, 2=scat
