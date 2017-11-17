@@ -11,3 +11,5 @@ BACKGROUND_VELOCITY_MODELS
 EXAMPLE.BAK
 tests/
 tools/__pycache__/
+TRIALS
+test_prog.py
