@@ -518,7 +518,10 @@
       stop
 12    close (11)
       vpmin=alpha(1)
-      vsmin=beta(42)
+      vsmin=beta(6)
+
+      print *, 'vpmin, vsmin = ', vpmin, vsmin, 'km/s'
+
       vpsource=alpha(izsource)
       vssource=beta(izsource)
       print *,'finished reading model'
