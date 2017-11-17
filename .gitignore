@@ -6,10 +6,10 @@ TESTS_FROM_2016
 EXAMPLE
 bin
 BACKGROUND_VELOCITY_MODELS
-.DS_Store
 .idea/
 EXAMPLE.BAK
 tests/
-tools/__pycache__/
 TRIALS
+.DS_Store
 read_phonon_array/__pycache__/
+tools/__pycache__/
