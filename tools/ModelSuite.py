@@ -2,7 +2,7 @@ from os import mkdir, chdir, getcwd, symlink
 from subprocess import Popen
 
 class ModelSuite():
-    def __init__(self, name='TRIALS', param_to_test='freq', base_file='BASE_DOFILES/do.photon', values_to_test=[], SLURM = False):
+    def __init__(self, name='TRIALS', param_to_test='freq', base_file='BASE_DOFILES/do.photon', values_to_test=[], SLURM = True):
 
         root = getcwd()
 
@@ -22,9 +22,11 @@ class ModelSuite():
             symlink('%s/BACKGROUND_VELOCITY_MODELS/sereno_orcutt' % root,'sereno_orcutt')
 
             #launch program
-            cmd = 'bash do.photon 1> stdout.txt 2> stderr.txt'
+            cmd = 'do.photon 1> stdout.txt 2> stderr.txt'
             if SLURM:
-                cmd = 'sbatch -n 1 -t 0:10:00 --mem=1.5G %s' % cmd
+                cmd = 'sbatch -n 1 -t 0:10:00 --mem=2G %s' % cmd
+	    else:
+		cmd = 'bash %s' % cmd
             proc = Popen(cmd, shell=True)
             procs.append(proc)
             chdir(root)
@@ -36,7 +38,7 @@ def write_dofile(base_file, value):
     fout = open('do.photon','w')
 
     for _i, line in enumerate(lines):
-        if _i == 2:
+        if _i == 4:
             nfo = line.split()
             tmp = '%.5f' % value
 

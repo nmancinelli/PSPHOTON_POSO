@@ -1,3 +1,5 @@
+#!/bin/bash
+#
 ./psphoton << !
 sereno_orcutt
 10.0             !assumed freq. (Hz), affects attenuation and scattering
