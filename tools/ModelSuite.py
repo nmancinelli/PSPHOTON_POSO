@@ -22,9 +22,9 @@ class ModelSuite():
             symlink('%s/BACKGROUND_VELOCITY_MODELS/sereno_orcutt' % root,'sereno_orcutt')
 
             #launch program
-            cmd = 'do.photon 1> stdout.txt 2> stderr.txt'
+            cmd = 'do.photon'
             if SLURM:
-                cmd = 'sbatch -n 1 -t 0:10:00 --mem=2G %s' % cmd
+                cmd = 'sbatch -n 1 -t 24:00:00 --mem=2G %s' % cmd
 	    else:
 		cmd = 'bash %s' % cmd
             proc = Popen(cmd, shell=True)

@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-./psphoton << !
+./psphoton << ! 1> stdout.log 2> stderr.log 
 sereno_orcutt
 10.0             !assumed freq. (Hz), affects attenuation and scattering
 35.0             !assumed source depth (km)
