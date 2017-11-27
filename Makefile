@@ -3,7 +3,7 @@ all:
 	make lib
 
 clean:
-	rm psphoton
+	rm bin/*
 
 bin/psphoton: Makefile psphoton.f90
 	mkdir -p bin
