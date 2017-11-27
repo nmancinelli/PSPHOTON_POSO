@@ -4,8 +4,12 @@
 #  N. Mancinelli - 18 OCT 2013
 #
 
+import matplotlib
+matplotlib.use('agg')
+from matplotlib import pylab as plt
+import numpy as np
+
 def main():
-	from matplotlib import pylab as plt
 	plt.figure(figsize=(11,8.5))
 	ax1=plt.subplot(3,2,1)
 	ax2=plt.subplot(3,2,2)
@@ -21,8 +25,6 @@ def main():
 	plt.savefig('wavefield.eps')
 
 def plot_row(ax1,ax2,fname,component_label):
-	from matplotlib import pylab
-	import numpy as np
 	A,t,x = loadMCarray_only(fname)
 	B = np.log10(A)
 	#fig = pylab.figure()
@@ -32,7 +34,7 @@ def plot_row(ax1,ax2,fname,component_label):
 		
 	ax1.set_xlabel('Range (deg)')
 	ax1.set_ylabel('Time  (s)')
-	ax1.text(18.,50.,component_label)
+	ax1.text(18.,50.,component_label,color='white')
 	# Now adding the colorbar
 	#cbaxes = fig.add_axes([0.25, 0.2, 0.2, 0.015]) 
 	#cb = pylab.colorbar(img, cax = cbaxes,orientation='horizontal')
@@ -56,7 +58,6 @@ def plot_row(ax1,ax2,fname,component_label):
 	return
 
 def runningMean(x, N):
-	import numpy as np
 	y = np.zeros((len(x),))
 	for ctr in range(len(x)):
 		 y[ctr] = np.sum(x[ctr:(ctr+N)])
