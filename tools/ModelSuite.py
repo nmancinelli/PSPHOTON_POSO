@@ -25,13 +25,13 @@ class ModelSuite():
             cmd = 'do.photon'
             if SLURM:
                 cmd = 'sbatch -n 1 -t 24:00:00 --mem=2G %s' % cmd
-	    else:
-		cmd = 'bash %s' % cmd
+            else:
+                cmd = 'bash %s' % cmd
             proc = Popen(cmd, shell=True)
             procs.append(proc)
             chdir(root)
 
-def write_dofile(base_file, value):
+def write_dofile(base_file, freq, Qalpha_at_3_Hz=7200):
     """For frequency only"""
     lines = open(base_file,'r').readlines()
 
@@ -40,7 +40,16 @@ def write_dofile(base_file, value):
     for _i, line in enumerate(lines):
         if _i == 4:
             nfo = line.split()
-            tmp = '%.5f' % value
+            tmp = '%.5f' % freq
+
+            assert( len(tmp) > len(nfo[0]) )
+
+            line  = tmp + line[len(tmp):]
+
+        elif _i == 50:
+            nfo = line.split()
+            Q = Qalpha_at_3_Hz * (freq/3.)**0.3
+            tmp = '%8d' % Q
 
             assert( len(tmp) > len(nfo[0]) )
 
