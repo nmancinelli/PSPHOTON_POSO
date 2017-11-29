@@ -18,9 +18,9 @@ def main():
 	ax5=plt.subplot(3,2,5)
 	ax6=plt.subplot(3,2,6)
 
-	plot_row(ax1,ax2,'out.photon_z','Z')
-	plot_row(ax3,ax4,'out.photon_rad','R')
-	plot_row(ax5,ax6,'out.photon_tran','T')
+	plot_row(ax1,ax2,'out.photon_p','p')
+	plot_row(ax3,ax4,'out.photon_sv','sv')
+	plot_row(ax5,ax6,'out.photon_sh','sh')
 	plt.tight_layout()
 	plt.savefig('wavefield.eps')
 
@@ -47,13 +47,11 @@ def plot_row(ax1,ax2,fname,component_label):
 		range=eachx*111.1 #approx
 		seis=A[:,ii]
 		seis=runningMean(seis,20)
-		#norm
-		seis=seis/max(seis)
 		tred=t-range/8.2
-		ax2.fill_between(tred[:len(seis)],range,seis*100.0+range,color='black',linewidth=0.1)
+		ax2.plot(tred[:len(seis)], np.log10(seis), linewidth=0.3)
 	ax2.set_xlim([-50,350])
-	ax2.set_ylim([-10.0,max(seis)*100.0+range])
-	ax2.set_ylabel('Range (km)')
+	ax2.set_ylim([0.0,6.5])
+	ax2.set_ylabel('log10[Amplitude]')
 	ax2.set_xlabel('T - X/8.2 (s)')
 	return
 
@@ -78,7 +76,6 @@ def loadMCarray_only(arrayfile):
 	print(x1,x2,nxdim,t1,t2,ntdim)
 	rax=numpy.linspace(x1,x2,nxdim)
 	tax=numpy.linspace(t1,t2,ntdim)
-
 
 	#print 'correcting for spherical surface area within each distance bin...' 
 
