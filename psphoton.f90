@@ -56,7 +56,7 @@
       real :: p(nray0,2),dx(nlay0,nray0,2),dt(nlay0,nray0,2)
       real :: dtstar(nlay0,nray0,2)
       
-      real    :: amp0(nray0,2),depsave(1000,2)
+      real    :: amp0(nray0,2),depsave(1000,10)
       integer :: iwsave(1000)
 !      real amp0(nray0,2),depsave(10000,2)
 !      integer iwsave(10000)
@@ -914,7 +914,16 @@
 				                
                nscat=nscat+1
                iscatold=-99           !***need to reset this (this bug still in Sun version)
-               
+              
+               isave=isave+1                      !****for dumping ray info
+               depsave(isave,1)=z_s(ilay)
+               depsave(isave,2)=t
+               depsave(isave,3)=plat
+               depsave(isave,4)=plon
+               depsave(isave,5)=svsh
+        
+               iwsave(isave)=iw
+ 
                if (idebug.ne.0) then
                  write (18,*) 'SC: ',nray,ip,iw,p(ip,iw),idir,ilay,iscat
                  write (18,*) '  ',nscat,distsum,freepath,afp,x,t
@@ -1274,8 +1283,7 @@
                print *,xdeg,tmin,p(ip,iw),tstar,amp,nscat
                nsave=isave
                do 8888 isave=1,nsave
-                  print *,depsave(isave,1),depsave(isave,2), &
-                          iwsave(isave)
+                  print *,depsave(isave,1),depsave(isave,2), depsave(isave,3), depsave(isave, 4), depsave(isave, 5), iwsave(isave)
 8888           continue
             end if
 
@@ -1291,7 +1299,10 @@
 
             isave=isave+1                      !****for dumping ray info
             depsave(isave,1)=depface(iface)
-            depsave(isave,2)=0.
+            depsave(isave,2)=t
+            depsave(isave,3)=plat
+            depsave(isave,4)=plon
+            depsave(isave,5)=svsh
             iwsave(isave)=iw
 
             if (iw.eq.1) then  ! incident P-wave
@@ -1343,8 +1354,8 @@
 					 vs0=beta(ilay)
 				!	 print *,''
 				!	 print *, 'PONE = ', p(ip,iwave1),azi, vp0, fracscat2, sigma2
-					 call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
-						plat,plon,x,distsum,idir,spol,p,np,ip,fracscat2,sigma2)
+					 !call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
+					!	plat,plon,x,distsum,idir,spol,p,np,ip,fracscat2,sigma2)
 				!	 print *, 'TWO = ', p(ip,iwave2),azi, vp0, fracscat2, sigma2
                 ! 	 print *, ''
                  end if              
@@ -1505,7 +1516,10 @@
 
                isave=isave+1                      !****for dumping ray info
                depsave(isave,1)=depface(iface)
-               depsave(isave,2)=0.
+               depsave(isave,2)=t
+               depsave(isave,3)=plat
+               depsave(isave,4)=plon
+               depsave(isave,5)=svsh
                iwsave(isave)=iw
 
                if (iw.eq.1) then  ! incident P-wave
@@ -1533,8 +1547,8 @@
 					 vs0=beta(ilay)
 					 !print *,''
 					 !print *, 'PONE = ', p(ip,iwave1),azi, vp0, fracscat2, sigma2
-					 call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
-						plat,plon,x,distsum,idir,spol,p,np,ip,fracscat2,sigma2)
+					 !call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
+					!	plat,plon,x,distsum,idir,spol,p,np,ip,fracscat2,sigma2)
 					 !print *, 'TWO = ', p(ip,iwave2),azi, vp0, fracscat2, sigma2
                  	 !print *, ''
                  end if   
@@ -1563,8 +1577,8 @@
 						vs0=beta(ilay)
 						!print *,''
 						!print *, 'PONE = ', p(ip,iwave1),azi, vp0, fracscat2, sigma2, svsh
-						call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
-							plat,plon,x,distsum,idir,svsh,p,np,ip,fracscat2,sigma2)
+						!call TOPOSCAT(nscat,vp0,vs0,iwave1,iwave2,azi,&
+					!		plat,plon,x,distsum,idir,svsh,p,np,ip,fracscat2,sigma2)
 						!print *, 'TWO = ', p(ip,iwave2),azi, vp0, fracscat2, sigma2, svsh
 						!print *, ''
                  	end if
@@ -1864,7 +1878,9 @@ end subroutine
       real    :: vel0(2),slow(2),a1(3),a2(3),a3(3),b1(3),b2(3),b3(3)
       real    :: azi0,svsh0,p1,the,phi,the2,phi2,r,p2,dot,ptarg,frac
       integer :: i,np,iw1,iw2,ip,idir,iret
-      
+
+      logical :: print_output = .True.
+
       do i=1,2
          vel0(i)=0.
          slow(i)=0.
@@ -1940,7 +1956,18 @@ end subroutine
          b2(i)=-sin(svsh)*a1(i)+cos(svsh)*a2(i)
 10    continue
 
+       print_output = iw1==2 .and. abs(svsh-1.57) <= 0.05
+        print_output = .false.
+        if (print_output) then
+          print *,'psi,zeta,sp=', psi,zeta,spol
+          print *, 'b1 before= ', b1
+        end if
+
       call BENDRAY(b1,b2,b3,psi,zeta,spol)        !overwrites b arrays
+
+        if (print_output) then
+          print *, 'b1 after = ', b1
+        end if
 
       call TO_POL(b3(1),b3(2),b3(3),the,phi,r)
 
@@ -1975,6 +2002,14 @@ end subroutine
       if (dot.gt.1) dot=1.
       if (dot.lt.-1) dot=-1.
       svsh=acos(dot)               !angular difference between a1 and b1
+
+
+
+       if (print_output) then
+          print *,'a1 (SV pol)    = ', a1
+          print *,'b1 (S pol dir) = ' , b1
+          print *,'svsh = ', svsh
+        end if
 
       if (nint(svsh/10.).ne.0.) then
          print *,'**SCATRAYPOL problem1'
@@ -2805,7 +2840,7 @@ end subroutine
       integer :: iscat,itype,i,j,k,nk,it,k1,k2,idum
       real :: el,nu,gam0,eps,sumg1,sumg2,sumg3,sumg4,area,fran,ran1
       real :: psi,zeta,spol,pi,psi2(npts0,nscat0),zeta2(npts0,nscat0)
-      real :: g(npts0,4,nscat0),sumg(npts0,4,nscat0,91),spol2(npts0,nscat0)
+      real :: g(npts0,4,nscat0),sumg(npts0,4,nscat0,91),spol2(npts0,nscat0,91)
       save firstcall,psi2,zeta2,sumg,nk
       data firstcall/.true.,.true.,.true.,.true.,.true.,.true./
       data pi/3.141592754/
@@ -2836,7 +2871,7 @@ end subroutine
 
 				   call GSATO(psi2(k,iscat),zeta2(k,iscat),el,nu,gam0,eps,effective_alen, &
 					g(k,1,iscat),g(k,2,iscat),g(k,3,iscat),g(k,4,iscat), &
-					spol2(k,iscat))
+					spol2(k,iscat,iangle))
 					
 					!print *, incoming_angle, effective_alen
 
@@ -2879,13 +2914,15 @@ end subroutine
             k2=k
          end if
 50    continue
-!      print *,'k,k1,k2 = ',k,k1,k2
-!      print *,'  ',fran,sumg(k1,itype,iscat),sumg(k2,itype,iscat)
+      !print *,'k,k1,k2 = ',k,k1,k2
+      !print *,'  ',fran,sumg(k1,itype,iscat),sumg(k2,itype,iscat)
       zeta=zeta2(k2,iscat)
       psi=psi2(k2,iscat)
       spol=0.
-      if (itype.eq.4) spol=spol2(k2,iscat)
-      
+      if (itype.eq.4) then
+                spol=spol2(k2,iscat,iangle)
+                !print *, 'k2, iscat, spol = ', k2, iscat, spol
+      end if      
       !write(189,*) iangle, inc_angle,zeta,psi
 
       return
