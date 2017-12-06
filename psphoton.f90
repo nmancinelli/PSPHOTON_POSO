@@ -1447,10 +1447,10 @@
 
          if (ilay.eq.1) then    !at surface
          
-            !isave=isave+1                  !****for dumping ray info
-            !depsave(isave,1)=0.
-            !depsave(isave,2)=0.
-            !iwsave(isave)=iw
+            isave=isave+1                  !****for dumping ray info
+            depsave(isave,1)=0.
+            depsave(isave,2)=0.
+            iwsave(isave)=iw
            
             nsurf=nsurf+1
 
