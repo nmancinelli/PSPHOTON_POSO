@@ -917,7 +917,7 @@
               
                isave=isave+1                      !****for dumping ray info
                depsave(isave,1)=z_s(ilay)
-               depsave(isave,2)=t
+               depsave(isave,2)=nscat
                depsave(isave,3)=plat
                depsave(isave,4)=plon
                depsave(isave,5)=svsh
@@ -1032,7 +1032,7 @@
 
                call SCATRAYPOL(p,np,iwave1,svsh,iwave2,ip,psi2,zeta2, &
                                spol,vp0,vs0,idir2,azi2)
-     
+
                if (idebug.ne.0) then               
                   write (18,*) 'SCATRAYPOL: ',np,iwave1,svsh,iwave2,ip
                   write (18,*) psi2,zeta2,spol,vp0,vs0,incoming_angle
@@ -1281,9 +1281,11 @@
                 tmin.ge.twind1.and.tmin.le.twind2) then
                print *,'Match to window, xdeg,tmin,p:'
                print *,xdeg,tmin,p(ip,iw),tstar,amp,nscat
+               print *,'---------------------------'
                nsave=isave
                do 8888 isave=1,nsave
-                  print *,depsave(isave,1),depsave(isave,2), depsave(isave,3), depsave(isave, 4), depsave(isave, 5), iwsave(isave)
+                  print *,depsave(isave,1),depsave(isave,2), depsave(isave,3), &
+                          depsave(isave,4),depsave(isave,5), iwsave(isave)
 8888           continue
             end if
 
@@ -1299,7 +1301,7 @@
 
             isave=isave+1                      !****for dumping ray info
             depsave(isave,1)=depface(iface)
-            depsave(isave,2)=t
+            depsave(isave,2)=nscat
             depsave(isave,3)=plat
             depsave(isave,4)=plon
             depsave(isave,5)=svsh
@@ -1449,7 +1451,7 @@
          
             isave=isave+1                  !****for dumping ray info
             depsave(isave,1)=0.
-            depsave(isave,2)=0.
+            depsave(isave,2)=nscat
             iwsave(isave)=iw
            
             nsurf=nsurf+1
@@ -1516,7 +1518,7 @@
 
                isave=isave+1                      !****for dumping ray info
                depsave(isave,1)=depface(iface)
-               depsave(isave,2)=t
+               depsave(isave,2)=nscat
                depsave(isave,3)=plat
                depsave(isave,4)=plon
                depsave(isave,5)=svsh
@@ -1873,11 +1875,13 @@ end subroutine
       implicit none
       integer, parameter :: nray0=50000
 !      parameter (nray0=15000)      
-      real    :: svsh,psi,zeta,spol,vp0,vs0,azi,pi,degrad
+      real    :: svsh,psi,zeta,spol,vp0,vs0,azi,degrad
       real    :: p(nray0,2)                   !ray table for both P and S
       real    :: vel0(2),slow(2),a1(3),a2(3),a3(3),b1(3),b2(3),b3(3)
       real    :: azi0,svsh0,p1,the,phi,the2,phi2,r,p2,dot,ptarg,frac
       integer :: i,np,iw1,iw2,ip,idir,iret
+
+      real, parameter :: pi = 3.14159265359
 
       logical :: print_output = .True.
 
@@ -1908,7 +1912,6 @@ end subroutine
       i=0
       iret=0
                               
-      pi=3.1415927
       degrad=180./pi
 
       vel0(1)=vp0
@@ -1928,7 +1931,7 @@ end subroutine
       if (idir.eq.1) the=180.-the
       phi=azi            !incident ray angle from North (degrees)
 
-      call TO_CAR(the,phi,1.,a3(1),a3(2),a3(3))    !a3 is ray direction vector
+      call TO_CAR(the,phi,1.,a3(1),a3(2),a3(3))    !a3 is ray direction vector (x,y,z coords)
       the2=abs(the-90.)
       phi2=phi
       if (the.lt.90.) phi2=phi+180.
@@ -1955,18 +1958,17 @@ end subroutine
          b1(i)= cos(svsh)*a1(i)+sin(svsh)*a2(i)    !b1 is S pol. dir.
          b2(i)=-sin(svsh)*a1(i)+cos(svsh)*a2(i)
 10    continue
-
-       print_output = iw1==2 .and. abs(svsh-1.57) <= 0.05
         print_output = .false.
+        !print_output = iw1==2 .and. a3(3) > 0.5
         if (print_output) then
           print *,'psi,zeta,sp=', psi,zeta,spol
-          print *, 'b1 before= ', b1
+          print *, 'b1, b2, b3, b2(1) before= ', b1, b2, b3, b2(1)
         end if
 
       call BENDRAY(b1,b2,b3,psi,zeta,spol)        !overwrites b arrays
 
         if (print_output) then
-          print *, 'b1 after = ', b1
+          print *, 'b1, b2, b3 after = ', b1, b2, b3
         end if
 
       call TO_POL(b3(1),b3(2),b3(3),the,phi,r)
@@ -1992,24 +1994,46 @@ end subroutine
          stop
       end if
 
-
-      the2=the-90.
+      !print *, the, phi
+      the2=abs(the-90.)
       phi2=phi
       if (the.lt.90.) phi2=phi+180.
-      call TO_CAR(the2,phi2,1.,a1(1),a1(2),a1(3))  !a1 is SV polarization
+      call TO_CAR(the2,phi2,1.,a1(1),a1(2),a1(3))  !a1 is new SV polarization
+      if (print_output) then
+      print *, 'the, phi = ', the, phi
+      print *, 'a1 (SV)   =', a1
+      print *, 'b1 (SPOL) =', b1
+      print *, 'b2 (....) =', b2
+      print *, 'b3 (RAYD) =', b3
+      print *, '-------'
+      end if
 
+      !there was potentially a bug here.  VDOT called a1, b1 but should
+      !  call a2, b2 in order to get appropriate svsh. -- NJM Dec 2017
       call VDOT(a1,b1,dot)
       if (dot.gt.1) dot=1.
       if (dot.lt.-1) dot=-1.
-      svsh=acos(dot)               !angular difference between a1 and b1
+      svsh=acos(dot)  !if b1 aligned with a1, pure SV
 
 
+      if (print_output) then
+         print *, 'psi, zeta, svsh0, svsh, spol, zeta+spol = ', psi, zeta, svsh0, svsh, spol, zeta+spol
+         print *, 'b2 = ', b2
+      end if
 
-       if (print_output) then
-          print *,'a1 (SV pol)    = ', a1
-          print *,'b1 (S pol dir) = ' , b1
-          print *,'svsh = ', svsh
-        end if
+      !if (svsh > pi) svsh = svsh - pi
+      !if (svsh < -pi) svsh = svsh + pi
+
+        if (print_output) then
+      print *, 'psi, zeta, spol', psi, zeta, spol
+      print *, 'a1             ', a1
+      print *, 'b1             ', b1
+      print *, 'a2             ', a2
+      print *, 'b2             ', b2
+
+      print *, 'svsh, dot      ', svsh, dot
+      print *, '-----------'
+      end if
 
       if (nint(svsh/10.).ne.0.) then
          print *,'**SCATRAYPOL problem1'

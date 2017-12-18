@@ -6,7 +6,7 @@ sereno_orcutt
 35.0             !assumed source depth (km)
 5                !radiate: (1) P,  (2) SH, (3) SV, (4) SH/SV, (5) P+S, (6) custom Es/Ep, (7) custom pmax
 50000            !number of ray parameters for tables (max=50000)
-12 13 280 320    !xwind1,xwind2,twind1,twind2 for ray info dump
+0 0 0 0          !xwind1,xwind2,twind1,twind2 for ray info dump
 0                !0=normal, 1=force equal refl/trans
 4                !number of interface depths (to follow) (max=6)
    0.0            !interface 1 (free-surface)
