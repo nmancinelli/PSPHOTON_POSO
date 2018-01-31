@@ -15,7 +15,9 @@ class ModelSuite():
             mkdir(newdir)
             chdir(newdir)
             tmp = '%s/%s' % (root, base_file)
-            write_dofile(tmp, value)
+
+	    #Test 
+            write_dofile(tmp, radiate=value)
 
             #create sym links
             symlink('%s/bin/psphoton' % root,'psphoton')
@@ -31,7 +33,7 @@ class ModelSuite():
             procs.append(proc)
             chdir(root)
 
-def write_dofile(base_file, freq, Qalpha_at_3_Hz=7200):
+def write_dofile(base_file, freq=16.0, Qalpha_at_3_Hz=7200, radiate=5):
     """For frequency only"""
     lines = open(base_file,'r').readlines()
 
@@ -42,7 +44,7 @@ def write_dofile(base_file, freq, Qalpha_at_3_Hz=7200):
             nfo = line.split()
             tmp = '%.5f' % freq
 
-            assert( len(tmp) > len(nfo[0]) )
+            assert( len(tmp) >= len(nfo[0]) )
 
             line  = tmp + line[len(tmp):]
 
@@ -51,15 +53,18 @@ def write_dofile(base_file, freq, Qalpha_at_3_Hz=7200):
             Q = Qalpha_at_3_Hz * (freq/3.)**0.3
             tmp = '%8d' % Q
 
-            assert( len(tmp) > len(nfo[0]) )
+            assert( len(tmp) >= len(nfo[0]) )
 
+            line  = tmp + line[len(tmp):]
+
+        elif _i == 6:
+            nfo = line.split()
+            tmp = '%1d' % radiate
+            assert( len(tmp) >= len(nfo[0]) )
             line  = tmp + line[len(tmp):]
 
         fout.write(line)
 
 def test():
-    ModelSuite(values_to_test=[1., 2., 4., 8., 16.])
-
-
-
-
+    #ModelSuite(values_to_test=[1., 2., 4., 8., 16.])
+    ModelSuite(values_to_test=[2, 3, 5])

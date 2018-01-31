@@ -12,9 +12,9 @@ import numpy as np
 def main():
 	plt.figure(figsize=(11,8.5))
 	ax1=plt.subplot(1,2,1)
-	plot_traces(ax1,'TRIALS/TEST0/out.photon_rad','TRIALS/TEST0/out.photon_tran','Z', title='Radial Transverse')
+	plot_traces(ax1,'TRIALS/TEST0/out.photon_rad','TRIALS/TEST0/out.photon_tran','Z', title='1 Hz')
 	ax2=plt.subplot(1,2,2)
-	plot_traces(ax2,'TRIALS/TEST4/out.photon_rad','TRIALS/TEST0/out.photon_tran','Z', title='Radial Transverse')
+	plot_traces(ax2,'TRIALS/TEST4/out.photon_rad','TRIALS/TEST4/out.photon_tran','Z', title='16 Hz')
 
 	plt.tight_layout()
 	plt.savefig('wavefield.eps')
@@ -23,11 +23,17 @@ def plot_traces(ax0,fname1,fname2,component_label, title='', xlabel='T - X/8.2 (
 
 	A,t,x = loadMCarray_only(fname1)
 	B,t,x = loadMCarray_only(fname2)
+
+	for ii in range(len(x)):
+                A[:,ii]=runningMean(A[:,ii],20)
+                B[:,ii]=runningMean(B[:,ii],20)
+
 	#C = np.arctan2(B,A)
 	C = np.log10(B) - np.log10(A)
 
-	img=ax0.imshow(C,origin='lower',aspect='auto',extent=[np.min(x),np.max(x),np.min(t),np.max(t)])
-	plt.colorbar(img)
+	img=ax0.imshow(C,origin='lower',aspect='auto',vmin=-1, vmax=1, extent=[np.min(x),np.max(x),np.min(t),np.max(t)])
+	cbar = plt.colorbar(img)
+	cbar.set_label('log10(Transverse/Radial)')
 	ax0.set_xlabel('Range (deg)')
 	ax0.set_ylabel('Time  (s)')
 	ax0.set_title(title)
