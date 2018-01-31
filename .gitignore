@@ -14,3 +14,4 @@ TRIALS
 .DS_Store
 read_phonon_array/__pycache__/
 tools/__pycache__/
+TRIALS_SV_SH/
