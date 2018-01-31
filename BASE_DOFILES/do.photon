@@ -44,9 +44,11 @@ sereno_orcutt
 	0.00              !rms perturbation
 	10.0 1.0         !scale length (km), aspect ratio (az/ax)
 0 99999           !min,max number of scattering events for output
-5                 !number of intrinsic Q layers (to follow) (max=6)
-  4 10            !min,max depth of Q layer
-  180             !Qalpha
+6                 !number of intrinsic Q layers (to follow) (max=6)
+  0 4             !min,max depth of Q layer
+  999999          !Qalpha
+   4 10           !min,max depth of Q layer
+   180            !Qalpha
     10 100        !min,max depth of Q layer
     7200          !Qalpha
   100 250         !min,max depth of Q layer

@@ -17,7 +17,7 @@ class ModelSuite():
             tmp = '%s/%s' % (root, base_file)
 
 	    #Test 
-            write_dofile(tmp, radiate=value)
+            write_dofile(tmp, source_depth_in_km=value)
 
             #create sym links
             symlink('%s/bin/psphoton' % root,'psphoton')
@@ -33,38 +33,65 @@ class ModelSuite():
             procs.append(proc)
             chdir(root)
 
-def write_dofile(base_file, freq=16.0, Qalpha_at_3_Hz=7200, radiate=5):
-    """For frequency only"""
-    lines = open(base_file,'r').readlines()
+def write_dofile(base_file, freq=1.0, source_depth_in_km=35.0, rms_crust=0.025, Qalpha_at_3_Hz=7200, Qalpha_in_the_water=999999, Qalpha_in_the_crust=180, radiate=5):
+	"""For frequency only"""
+	lines = open(base_file,'r').readlines()
 
-    fout = open('do.photon','w')
+	fout = open('do.photon','w')
 
-    for _i, line in enumerate(lines):
-        if _i == 4:
-            nfo = line.split()
-            tmp = '%.5f' % freq
+	for _i, line in enumerate(lines):
+		if _i == 4:
+			nfo = line.split()
+			tmp = '%.5f' % freq
+			assert( len(tmp) >= len(nfo[0]) )
+			line  = tmp + line[len(tmp):]
 
-            assert( len(tmp) >= len(nfo[0]) )
+		elif _i == 5:
+			nfo = line.split()
+			tmp = '%5.1f' % source_depth_in_km
+			assert( len(tmp) >= len(nfo[0]) )
+			line  = tmp + line[len(tmp):] 
 
-            line  = tmp + line[len(tmp):]
+		elif _i == 22:
+			nfo = line.split()
+			rms = rms_crust
+			tmp = '%5.3f' % rms
+			assert( len(tmp) >= len(nfo[0]) )
+			line  = tmp + line[len(tmp):] 
 
-        elif _i == 50:
-            nfo = line.split()
-            Q = Qalpha_at_3_Hz * (freq/3.)**0.3
-            tmp = '%8d' % Q
+		elif _i == 50:
+			nfo = line.split()
+			Q = Qalpha_in_the_crust
+			tmp = '%8d' % Q
+			assert( len(tmp) >= len(nfo[0]) )
+			line  = tmp + line[len(tmp):] 
 
-            assert( len(tmp) >= len(nfo[0]) )
+		elif _i == 48:
+			nfo = line.split()
+			Q = Qalpha_in_the_water
+			tmp = '%8d' % Q
+			assert( len(tmp) >= len(nfo[0]) )
+			line  = tmp + line[len(tmp):] 
 
-            line  = tmp + line[len(tmp):]
+		elif _i == 52:
+			nfo = line.split()
+			Q = Qalpha_at_3_Hz * (freq/3.)**0.3
+			tmp = '%8d' % Q
 
-        elif _i == 6:
-            nfo = line.split()
-            tmp = '%1d' % radiate
-            assert( len(tmp) >= len(nfo[0]) )
-            line  = tmp + line[len(tmp):]
+			assert( len(tmp) >= len(nfo[0]) )
 
-        fout.write(line)
+			line  = tmp + line[len(tmp):]
+
+		elif _i == 6:
+			nfo = line.split()
+			tmp = '%1d' % radiate
+			assert( len(tmp) >= len(nfo[0]) )
+			line  = tmp + line[len(tmp):]
+
+		fout.write(line)
+
+	return
 
 def test():
     #ModelSuite(values_to_test=[1., 2., 4., 8., 16.])
-    ModelSuite(values_to_test=[2, 3, 5])
+    ModelSuite(values_to_test=[10, 25, 50, 75, 100])

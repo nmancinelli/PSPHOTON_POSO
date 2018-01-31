@@ -12,9 +12,9 @@ import numpy as np
 def main():
 	plt.figure(figsize=(11,8.5))
 	ax1=plt.subplot(1,2,1)
-	plot_traces(ax1,'TRIALS/TEST0/out.photon_rad','TRIALS/TEST0/out.photon_tran','Z', title='1 Hz')
+	plot_traces(ax1,'TRIALS/TEST1/out.photon_rad','TRIALS/TEST1/out.photon_tran','Z', title='Source depth: 25 km')
 	ax2=plt.subplot(1,2,2)
-	plot_traces(ax2,'TRIALS/TEST4/out.photon_rad','TRIALS/TEST4/out.photon_tran','Z', title='16 Hz')
+	plot_traces(ax2,'TRIALS/TEST3/out.photon_rad','TRIALS/TEST3/out.photon_tran','Z', title='Source depth: 75 km')
 
 	plt.tight_layout()
 	plt.savefig('wavefield.eps')
