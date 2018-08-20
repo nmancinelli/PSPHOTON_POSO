@@ -18,12 +18,13 @@ def main():
 	ax5=plt.subplot(3,2,5)
 	ax6=plt.subplot(3,2,6)
 
+
 	plot_traces(ax1,'TRIALS/TEST0/out.photon_z','Z', title='1 Hz')
 	plot_traces(ax3,'TRIALS/TEST0/out.photon_rad','R')
 	plot_traces(ax5,'TRIALS/TEST0/out.photon_tran','T')
-	plot_traces(ax2,'TRIALS/TEST4/out.photon_z','Z', title='16 Hz')
-	plot_traces(ax4,'TRIALS/TEST4/out.photon_rad','R')
-	plot_traces(ax6,'TRIALS/TEST4/out.photon_tran','T')
+	plot_traces(ax2,'TRIALS/TEST3/out.photon_z','Z', title='16 Hz')
+	plot_traces(ax4,'TRIALS/TEST3/out.photon_rad','R')
+	plot_traces(ax6,'TRIALS/TEST3/out.photon_tran','T')
 
 	#cleanup
 	for ax in [ax1,ax2,ax3,ax4]:
@@ -35,25 +36,42 @@ def main():
 	plt.tight_layout()
 	plt.savefig('wavefield.eps')
 
-def plot_traces(ax0,fname,component_label, title='', xlabel='T - X/8.2 (s)', ylabel='Range (km)'):
+def plot_traces(ax0,fname,component_label, plot_linear=True, title='', xlabel='T - X/8.2 (s)', ylabel='Range (km)', color='black', iitarg=None):
 	A,t,x = loadMCarray_only(fname)
-	B = np.log10(A)
 
-	ax0.text(-30.,50.,component_label,color='red')
-	
+	ax0.text(0.02,0.02,component_label,color='red',transform=ax0.transAxes)
+
+	xtitle='None'
 	#pylab.subplot(nrow,2,iplt+1)
 	for ii,eachx in enumerate(x):
-		if np.mod(ii,10) != 0.0:
+		if  ii % 20 != 0:
 			continue
 		range=eachx*111.1 #approx
-		seis=A[:,ii]
-		seis=runningMean(seis,20)
-		#norm
-		seis=seis/max(seis)
 		tred=t-range/8.2
-		ax0.fill_between(tred[:len(seis)],range,seis*100.0+range,color='black',linewidth=0.1)
-	ax0.set_xlim([-50,250])
-	ax0.set_ylim([-10.0,max(seis)*100.0+range])
+		seis=A[:,ii]
+		#seis=runningMean(seis,20)
+		xtitle=eachx
+		#norm
+		if plot_linear:
+			#normalize and plot on linear amplitude scale
+			norm=max(seis)
+			print('Norm factor = %f' % norm)
+			seis=seis/norm
+			ax0.fill_between(tred[:len(seis)],range,seis*100.0+range,color='black',linewidth=0.1)
+		else:
+			#log plot
+			seis = np.log10(seis)
+			ax0.plot(t[:len(seis)],seis,color=color,linewidth=0.3)
+			ylabel='log10[Amplitude]'
+			xlabel='Time (s)'
+
+	if plot_linear:
+		ax0.set_xlim([-50,250])
+		ax0.set_ylim([-10.0,max(seis)*200.0+range])
+	else:
+		mmax=np.log10(np.amax(A))
+		ax0.set_ylim(-3,5)
+
 	ax0.set_ylabel(ylabel)
 	ax0.set_xlabel(xlabel)
 	ax0.set_title(title)

@@ -12,9 +12,9 @@ import numpy as np
 def main():
 	plt.figure(figsize=(11,8.5))
 	ax1=plt.subplot(1,2,1)
-	plot_traces(ax1,'TRIALS/TEST1/out.photon_rad','TRIALS/TEST1/out.photon_tran','Z', title='Source depth: 25 km')
+	plot_traces(ax1,'TRIALS_WATER_BOUNCE/TEST0/out.photon_rad','TRIALS_WATER_BOUNCE/TEST0/out.photon_tran','Z', title='No water bounces')
 	ax2=plt.subplot(1,2,2)
-	plot_traces(ax2,'TRIALS/TEST3/out.photon_rad','TRIALS/TEST3/out.photon_tran','Z', title='Source depth: 75 km')
+	plot_traces(ax2,'TRIALS_WATER_BOUNCE/TEST1/out.photon_rad','TRIALS_WATER_BOUNCE/TEST1/out.photon_tran','Z', title='With water bounces')
 
 	plt.tight_layout()
 	plt.savefig('wavefield.eps')

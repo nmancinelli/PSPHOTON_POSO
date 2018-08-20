@@ -32,60 +32,90 @@ subroutine read_phonon_array(arrayfile,rbin,x1,x2,nxdim,t1,t2,ntdim)
 		print *,'ix,deldeg,sang = ',ix,deldeg,sang
 	end do
 
+        call apply_spatial_filter(rbin, nxdim, ntdim, 10, 1)
+
 	rbin=sqrt(rbin)
 
 	return
 
 end subroutine
 
-!subroutine window_around_pdiff(dt,del_deg,qdep,tstart,wt1,wt2,iw1,iw2)
-!	implicit none
-!	real :: dt, del_deg, qdep, t1, t2, wt1, wt2
-!	real :: tt, tstart
-!	integer, parameter :: npts = 3001
-!	integer :: iflag,iw1,iw2
-!	
-!!f2py intent(in) dt,del_deg,qdep,tstart,wt1,wt2
-!!f2py intent(out) iw1,iw2
-!	
-!	if (del_deg < 98) then
-!	 call GET_TTS('/Users/njmancinelli/PROG/TT/tt91.p',1,del_deg,qdep,tt,iflag)
-!	else
-!	 call GET_TTS('/Users/njmancinelli/PROG/TT/tt91.Pdif',2,del_deg,qdep,tt,iflag)
-!	endif
-!	
-!	tt=tt*60.0 !convert to seconds
-!	
-!	iw1 = nint((wt1+tt-tstart)/dt)
-!	iw2 = nint((wt2+tt-tstart)/dt)
-!	
-!	if (iw1 <= 0)    iw1=1
-!	if (iw2 >= npts) iw2=npts
-!	return
-!	
-!end subroutine
+subroutine apply_spatial_filter(A, nxdim, ntdim, itbuf, ixbuf)
+        implicit none
+        real, dimension(10000) :: tmp1
+        real, dimension(10000,10000) :: A, B
+        integer :: nxdim, ntdim, ii, jj, itbuf, ixbuf
+        integer :: npts
 
-!subroutine get_filter_wavelet(dt,f1,f2,npp,e)
-!	implicit none
-!	integer,parameter :: npts = 3001
-!	real, dimension(npts) :: a,b,e
-!	real :: f1,f2,dt
-!	integer :: npp,ierr
+        B=0.
+
+        npts=(2*ixbuf+1) * (2*itbuf+1)
+
+        do ii=1+itbuf,ntdim-itbuf
+                do jj=1+ixbuf,nxdim-ixbuf
+                        !tmp(1:(itbuf*ixbuf)) = reshape(A(ii-itbuf:ii+itbuf,jj-ixbuf:jj+ixbuf),(/itbuf*ixbuf/))
+                  tmp1(1:npts) = reshape(A(ii-itbuf:ii+itbuf,jj-ixbuf:jj+ixbuf), (/npts/))
+                  B(ii,jj)=sum(A(ii-itbuf:ii+itbuf,jj-ixbuf:jj+ixbuf))/npts
+                  !call  SelectionSort(tmp1(1:npts))
+                  !B(ii,jj) = tmp1((npts+1)/2)
+                end do
+        end do
+
+        A=B
+
+        return
+
+contains
+
+!-SelectionSort----------------------------------------------
+! Subroutine to sort an array Item into ascending order using 
+! the simple selection sort algorithm.  For descending order 
+! change MINVAL to MAXVAL and MINLOC to MAXLOC.  Local 
+! variables used are:
+!   NumItems         : number of elements in array Item
+!   LargestItem      : largest item in current sublist
+!   MAXLOC_array     : one-element array returned by MINLOC
+!   LocationLmallest : location of LargestItem
+!   I                : subscript
 !
-!!f2py intent(in) dt,f1,f2,npp
-!!f2py intent(out) e
+! Accepts:  Array Item
+! Returns:  Array Item (modified) with elements in ascending 
+!           order
 !
-!	a=0.0
-!	a(1501)=1.0
-!
-!	call FILTER(a, b, npts, dt, f1, f2, npp, ierr)
-!	if (ierr /= 0) then
-!	   print *, '***Error in 1 FILTER, ierr = ', ierr
-!	   stop
-!	endif
-!	call TILBERT(b,dt,npts,npp,e)
-!	return
-!	
-!end subroutine
-!	
-!	
+! Note:  Item is an assumed-shape array so a program unit that 
+!        calls this subroutine must:
+!        1. contain this subroutine as an internal subprogram,
+!        2. import this subroutine from a module, or
+!        3. contain an interface block for this subroutine. 
+!--------------------------------------------------------------
+
+SUBROUTINE SelectionSort(Item)
+
+  REAL, DIMENSION(:), INTENT(INOUT) :: Item
+  REAL :: LargestItem
+  INTEGER :: NumItems, I, LocationLargest
+  INTEGER, DIMENSION(1) :: MAXLOC_array
+
+  NumItems = SIZE(Item)
+  DO I = 1, NumItems - 1
+
+     ! Find smallest item in the sublist 
+     ! Item(I), ..., Item(NumItems)
+
+     LargestItem = MAXVAL(Item(I:NumItems))
+     MAXLOC_array = MAXLOC(Item(I:NumItems))
+     LocationLargest = (I - 1) + MAXLOC_array(1)
+
+     ! Interchange largest item with Item(I) at
+     ! beginning of sublist
+
+     Item(LocationLargest) = Item(I)
+     Item(I) = LargestItem
+
+  END DO
+
+
+END SUBROUTINE SelectionSort
+
+end subroutine
+

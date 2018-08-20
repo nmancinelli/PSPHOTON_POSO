@@ -17,7 +17,7 @@ class ModelSuite():
             tmp = '%s/%s' % (root, base_file)
 
 	    #Test 
-            write_dofile(tmp, source_depth_in_km=value)
+            write_dofile(tmp, freq=value)
 
             #create sym links
             symlink('%s/bin/psphoton' % root,'psphoton')
@@ -93,5 +93,5 @@ def write_dofile(base_file, freq=1.0, source_depth_in_km=35.0, rms_crust=0.025, 
 	return
 
 def test():
-    #ModelSuite(values_to_test=[1., 2., 4., 8., 16.])
-    ModelSuite(values_to_test=[10, 25, 50, 75, 100])
+    ModelSuite(values_to_test=[1., 2., 4., 8., 16.])
+    #ModelSuite(values_to_test=[10, 25, 50, 75, 100])
